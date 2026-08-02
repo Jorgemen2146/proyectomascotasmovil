@@ -2,9 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_icons.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_email_field.dart';
+import '../../../../core/widgets/app_password_field.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/fade_slide_in.dart';
+import '../../../../core/widgets/responsive_center.dart';
 import '../../application/auth_state_controller.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
@@ -16,15 +23,18 @@ class RegisterPage extends ConsumerStatefulWidget {
 
 class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
-  final _fullNameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isSubmitting = false;
+  bool _acceptedTerms = false;
 
   @override
   void dispose() {
-    _fullNameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -33,10 +43,20 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (!_acceptedTerms) {
+      AppSnackBar.showError(
+        context,
+        'Debes aceptar los Términos y Condiciones.',
+      );
+      return;
+    }
 
     setState(() => _isSubmitting = true);
+    final fullName =
+        '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'
+            .trim();
     final success = await ref.read(authStateControllerProvider.notifier).register(
-          fullName: _fullNameController.text.trim(),
+          fullName: fullName,
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
@@ -45,7 +65,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
     if (!success) {
       final message = ref.read(authStateControllerProvider).errorMessage;
-      AppSnackBar.showError(context, message ?? 'Registration failed.');
+      AppSnackBar.showError(context, message ?? 'No se pudo crear la cuenta.');
     }
   }
 
@@ -59,66 +79,127 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Create your account',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                  textAlign: TextAlign.center,
+        child: ResponsiveCenter(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: FadeSlideIn(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Crea tu cuenta',
+                      style: AppTypography.h1,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'Únete a DogPlatform',
+                      style: AppTypography.bodySecondary,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+                    AppTextField(
+                      label: 'Nombre',
+                      controller: _firstNameController,
+                      prefixIcon: AppIcons.person,
+                      textInputAction: TextInputAction.next,
+                      validator: (value) => (value == null || value.trim().isEmpty)
+                          ? 'Requerido'
+                          : null,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Apellido',
+                      controller: _lastNameController,
+                      prefixIcon: AppIcons.person,
+                      textInputAction: TextInputAction.next,
+                      validator: (value) => (value == null || value.trim().isEmpty)
+                          ? 'Requerido'
+                          : null,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppEmailField(controller: _emailController),
+                    const SizedBox(height: AppSpacing.md),
+                    AppPasswordField(controller: _passwordController),
+                    const SizedBox(height: AppSpacing.md),
+                    AppPasswordField(
+                      controller: _confirmPasswordController,
+                      label: 'Confirmar contraseña',
+                      textInputAction: TextInputAction.done,
+                      autofillHints: const [],
+                      validator: (value) => (value != _passwordController.text)
+                          ? 'Las contraseñas no coinciden'
+                          : null,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    _TermsCheckbox(
+                      value: _acceptedTerms,
+                      onChanged: (value) =>
+                          setState(() => _acceptedTerms = value),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    AppButton.secondary(
+                      label: 'Crear cuenta',
+                      isLoading: _isSubmitting,
+                      onPressed: _submit,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
                 ),
-                const SizedBox(height: 24),
-                AppTextField(
-                  label: 'Full name',
-                  controller: _fullNameController,
-                  prefixIcon: Icons.person_outline,
-                  validator: (value) =>
-                      (value == null || value.trim().isEmpty) ? 'Required' : null,
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  label: 'Email',
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  prefixIcon: Icons.email_outlined,
-                  validator: (value) => (value == null || !value.contains('@'))
-                      ? 'Enter a valid email'
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  label: 'Password',
-                  controller: _passwordController,
-                  obscureText: true,
-                  prefixIcon: Icons.lock_outline,
-                  validator: (value) => (value == null || value.length < 6)
-                      ? 'Minimum 6 characters'
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  label: 'Confirm password',
-                  controller: _confirmPasswordController,
-                  obscureText: true,
-                  prefixIcon: Icons.lock_outline,
-                  validator: (value) => (value != _passwordController.text)
-                      ? 'Passwords do not match'
-                      : null,
-                ),
-                const SizedBox(height: 24),
-                AppButton(
-                  label: 'Sign up',
-                  isLoading: _isSubmitting,
-                  onPressed: _submit,
-                ),
-              ],
+              ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _TermsCheckbox extends StatelessWidget {
+  const _TermsCheckbox({required this.value, required this.onChanged});
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => onChanged(!value),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Checkbox(value: value, onChanged: (v) => onChanged(v ?? false)),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text.rich(
+                TextSpan(
+                  style: AppTypography.bodySecondary,
+                  children: [
+                    const TextSpan(text: 'Acepto los '),
+                    TextSpan(
+                      text: 'Términos y Condiciones',
+                      style: AppTypography.bodySecondary.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const TextSpan(text: ' y la '),
+                    TextSpan(
+                      text: 'Política de Privacidad',
+                      style: AppTypography.bodySecondary.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
