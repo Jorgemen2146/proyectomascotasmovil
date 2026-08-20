@@ -13,13 +13,15 @@ class UserDto with _$UserDto {
   const UserDto._();
 
   const factory UserDto({
-    required String id,
+    required String userId,
     required String email,
-    required String fullName,
+    required String firstName,
+    required String lastName,
   }) = _UserDto;
 
   factory UserDto.fromJson(Map<String, dynamic> json) =>
       _$UserDtoFromJson(json);
 
-  User toDomain() => User(id: id, email: email, fullName: fullName);
+  User toDomain() =>
+      User(id: userId, email: email, fullName: '$firstName $lastName'.trim());
 }

@@ -65,14 +65,22 @@ class AuthStateController extends Notifier<AuthState> {
   }
 
   Future<bool> register({
-    required String fullName,
+    required String firstName,
+    required String lastName,
     required String email,
     required String password,
+    String? phoneNumber,
   }) async {
     state = state.copyWith(errorMessage: null);
     final result = await ref
         .read(registerUseCaseProvider)
-        .call(fullName: fullName, email: email, password: password);
+        .call(
+          firstName: firstName,
+          lastName: lastName,
+          email: email,
+          password: password,
+          phoneNumber: phoneNumber,
+        );
     return result.when(
       success: (_) {
         state = const AuthState(status: AuthStatus.unauthenticated);

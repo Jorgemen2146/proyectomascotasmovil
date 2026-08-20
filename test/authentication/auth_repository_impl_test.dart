@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:dogplatform/features/authentication/data/datasources/auth_remote_data_source.dart';
 import 'package:dogplatform/features/authentication/data/dto/auth_response_dto.dart';
-import 'package:dogplatform/features/authentication/data/dto/user_dto.dart';
 import 'package:dogplatform/features/authentication/data/repositories/auth_repository_impl.dart';
 import 'package:dogplatform/core/storage/secure_token_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -15,9 +14,11 @@ void main() {
     );
 
     final register = await repository.register(
-      fullName: 'Dog User',
+      firstName: 'Dog',
+      lastName: 'User',
       email: 'dog@example.com',
       password: 'password',
+      phoneNumber: null,
     );
     final verify = await repository.verifyEmail(
       email: 'dog@example.com',
@@ -44,16 +45,34 @@ void main() {
     expect(login.isSuccess, isTrue);
     expect(storage.saveCalls, 1);
   });
+
+  test('Logout envía el refreshToken y siempre limpia la sesión', () async {
+    final storage = _RecordingTokenStorage()..refreshToken = 'refresh';
+    final remote = _FakeRemoteDataSource();
+    final repository = AuthRepositoryImpl(
+      remoteDataSource: remote,
+      tokenStorage: storage,
+    );
+
+    await repository.logout();
+
+    expect(remote.logoutRefreshToken, 'refresh');
+    expect(storage.clearCalls, 1);
+  });
 }
 
 class _FakeRemoteDataSource extends AuthRemoteDataSource {
   _FakeRemoteDataSource() : super(authenticatedDio: Dio(), rawDio: Dio());
 
+  String? logoutRefreshToken;
+
   @override
   Future<void> register({
-    required String fullName,
+    required String firstName,
+    required String lastName,
     required String email,
     required String password,
+    String? phoneNumber,
   }) async {}
 
   @override
@@ -67,16 +86,28 @@ class _FakeRemoteDataSource extends AuthRemoteDataSource {
     required String email,
     required String password,
   }) async {
-    return const AuthResponseDto(
+    return AuthResponseDto(
+      userId: '1',
+      firstName: 'Dog',
+      lastName: 'User',
+      email: 'dog@example.com',
       accessToken: 'access',
+      accessTokenExpiresAtUtc: DateTime(2030),
       refreshToken: 'refresh',
-      user: UserDto(id: '1', email: 'dog@example.com', fullName: 'Dog User'),
+      refreshTokenExpiresAtUtc: DateTime(2031),
     );
+  }
+
+  @override
+  Future<void> logout({required String refreshToken}) async {
+    logoutRefreshToken = refreshToken;
   }
 }
 
 class _RecordingTokenStorage extends SecureTokenStorage {
   int saveCalls = 0;
+  int clearCalls = 0;
+  String? refreshToken;
 
   @override
   Future<void> saveTokens({
@@ -84,5 +115,13 @@ class _RecordingTokenStorage extends SecureTokenStorage {
     required String refreshToken,
   }) async {
     saveCalls++;
+  }
+
+  @override
+  Future<String?> readRefreshToken() async => refreshToken;
+
+  @override
+  Future<void> clear() async {
+    clearCalls++;
   }
 }

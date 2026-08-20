@@ -19,7 +19,12 @@ class ServerFailure extends AppFailure {
 }
 
 class UnauthorizedFailure extends AppFailure {
-  const UnauthorizedFailure([super.message = 'Session expired.']);
+  const UnauthorizedFailure([
+    super.message = 'Session expired.',
+    this.errorCode,
+  ]);
+
+  final String? errorCode;
 }
 
 class ValidationFailure extends AppFailure {

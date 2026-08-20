@@ -21,9 +21,10 @@ UserDto _$UserDtoFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$UserDto {
-  String get id => throw _privateConstructorUsedError;
+  String get userId => throw _privateConstructorUsedError;
   String get email => throw _privateConstructorUsedError;
-  String get fullName => throw _privateConstructorUsedError;
+  String get firstName => throw _privateConstructorUsedError;
+  String get lastName => throw _privateConstructorUsedError;
 
   /// Serializes this UserDto to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -39,7 +40,7 @@ abstract class $UserDtoCopyWith<$Res> {
   factory $UserDtoCopyWith(UserDto value, $Res Function(UserDto) then) =
       _$UserDtoCopyWithImpl<$Res, UserDto>;
   @useResult
-  $Res call({String id, String email, String fullName});
+  $Res call({String userId, String email, String firstName, String lastName});
 }
 
 /// @nodoc
@@ -57,23 +58,28 @@ class _$UserDtoCopyWithImpl<$Res, $Val extends UserDto>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? id = null,
+    Object? userId = null,
     Object? email = null,
-    Object? fullName = null,
+    Object? firstName = null,
+    Object? lastName = null,
   }) {
     return _then(
       _value.copyWith(
-            id: null == id
-                ? _value.id
-                : id // ignore: cast_nullable_to_non_nullable
+            userId: null == userId
+                ? _value.userId
+                : userId // ignore: cast_nullable_to_non_nullable
                       as String,
             email: null == email
                 ? _value.email
                 : email // ignore: cast_nullable_to_non_nullable
                       as String,
-            fullName: null == fullName
-                ? _value.fullName
-                : fullName // ignore: cast_nullable_to_non_nullable
+            firstName: null == firstName
+                ? _value.firstName
+                : firstName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            lastName: null == lastName
+                ? _value.lastName
+                : lastName // ignore: cast_nullable_to_non_nullable
                       as String,
           )
           as $Val,
@@ -89,7 +95,7 @@ abstract class _$$UserDtoImplCopyWith<$Res> implements $UserDtoCopyWith<$Res> {
   ) = __$$UserDtoImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String id, String email, String fullName});
+  $Res call({String userId, String email, String firstName, String lastName});
 }
 
 /// @nodoc
@@ -106,23 +112,28 @@ class __$$UserDtoImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? id = null,
+    Object? userId = null,
     Object? email = null,
-    Object? fullName = null,
+    Object? firstName = null,
+    Object? lastName = null,
   }) {
     return _then(
       _$UserDtoImpl(
-        id: null == id
-            ? _value.id
-            : id // ignore: cast_nullable_to_non_nullable
+        userId: null == userId
+            ? _value.userId
+            : userId // ignore: cast_nullable_to_non_nullable
                   as String,
         email: null == email
             ? _value.email
             : email // ignore: cast_nullable_to_non_nullable
                   as String,
-        fullName: null == fullName
-            ? _value.fullName
-            : fullName // ignore: cast_nullable_to_non_nullable
+        firstName: null == firstName
+            ? _value.firstName
+            : firstName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        lastName: null == lastName
+            ? _value.lastName
+            : lastName // ignore: cast_nullable_to_non_nullable
                   as String,
       ),
     );
@@ -133,24 +144,27 @@ class __$$UserDtoImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$UserDtoImpl extends _UserDto {
   const _$UserDtoImpl({
-    required this.id,
+    required this.userId,
     required this.email,
-    required this.fullName,
+    required this.firstName,
+    required this.lastName,
   }) : super._();
 
   factory _$UserDtoImpl.fromJson(Map<String, dynamic> json) =>
       _$$UserDtoImplFromJson(json);
 
   @override
-  final String id;
+  final String userId;
   @override
   final String email;
   @override
-  final String fullName;
+  final String firstName;
+  @override
+  final String lastName;
 
   @override
   String toString() {
-    return 'UserDto(id: $id, email: $email, fullName: $fullName)';
+    return 'UserDto(userId: $userId, email: $email, firstName: $firstName, lastName: $lastName)';
   }
 
   @override
@@ -158,15 +172,18 @@ class _$UserDtoImpl extends _UserDto {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$UserDtoImpl &&
-            (identical(other.id, id) || other.id == id) &&
+            (identical(other.userId, userId) || other.userId == userId) &&
             (identical(other.email, email) || other.email == email) &&
-            (identical(other.fullName, fullName) ||
-                other.fullName == fullName));
+            (identical(other.firstName, firstName) ||
+                other.firstName == firstName) &&
+            (identical(other.lastName, lastName) ||
+                other.lastName == lastName));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, email, fullName);
+  int get hashCode =>
+      Object.hash(runtimeType, userId, email, firstName, lastName);
 
   /// Create a copy of UserDto
   /// with the given fields replaced by the non-null parameter values.
@@ -184,20 +201,23 @@ class _$UserDtoImpl extends _UserDto {
 
 abstract class _UserDto extends UserDto {
   const factory _UserDto({
-    required final String id,
+    required final String userId,
     required final String email,
-    required final String fullName,
+    required final String firstName,
+    required final String lastName,
   }) = _$UserDtoImpl;
   const _UserDto._() : super._();
 
   factory _UserDto.fromJson(Map<String, dynamic> json) = _$UserDtoImpl.fromJson;
 
   @override
-  String get id;
+  String get userId;
   @override
   String get email;
   @override
-  String get fullName;
+  String get firstName;
+  @override
+  String get lastName;
 
   /// Create a copy of UserDto
   /// with the given fields replaced by the non-null parameter values.

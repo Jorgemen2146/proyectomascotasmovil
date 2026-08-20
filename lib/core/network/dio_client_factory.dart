@@ -1,9 +1,11 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../config/app_config.dart';
+import '../interceptors/safe_http_log_interceptor.dart';
 
 /// Builds pre-configured [Dio] instances sharing consistent timeouts and,
-/// in non-production environments, verbose request/response logging.
+/// safe request/response logging in debug builds only.
 class DioClientFactory {
   DioClientFactory._();
 
@@ -18,10 +20,8 @@ class DioClientFactory {
       ),
     );
 
-    if (!config.isProd) {
-      dio.interceptors.add(
-        LogInterceptor(requestBody: true, responseBody: true),
-      );
+    if (kDebugMode) {
+      dio.interceptors.add(const SafeHttpLogInterceptor());
     }
 
     return dio;

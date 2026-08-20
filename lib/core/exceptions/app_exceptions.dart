@@ -27,7 +27,12 @@ class ServerException extends AppException {
 
 /// 401 Unauthorized after a failed (or absent) token refresh.
 class UnauthorizedException extends AppException {
-  const UnauthorizedException([super.message = 'Session expired.']);
+  const UnauthorizedException([
+    super.message = 'Session expired.',
+    this.errorCode,
+  ]);
+
+  final String? errorCode;
 }
 
 /// Request payload failed validation on the server (422/400 with field errors).

@@ -8,7 +8,18 @@ import '../storage/secure_token_storage.dart';
 
 /// Signature for a function that performs the token refresh HTTP call and
 /// returns the new access token, or `null` if the refresh failed.
-typedef RefreshTokenCall = Future<String?> Function(String refreshToken);
+typedef RefreshTokenCall =
+    Future<RefreshedTokens?> Function(String refreshToken);
+
+class RefreshedTokens {
+  const RefreshedTokens({
+    required this.accessToken,
+    required this.refreshToken,
+  });
+
+  final String accessToken;
+  final String refreshToken;
+}
 
 /// Dio interceptor responsible for:
 /// 1. Attaching `Authorization: Bearer <accessToken>` to every request.
@@ -105,15 +116,17 @@ class AuthInterceptor extends Interceptor {
       return false;
     }
 
-    final newAccessToken = await _refreshTokenCall(refreshToken);
-    if (newAccessToken == null || newAccessToken.isEmpty) {
+    final refreshedTokens = await _refreshTokenCall(refreshToken);
+    if (refreshedTokens == null ||
+        refreshedTokens.accessToken.isEmpty ||
+        refreshedTokens.refreshToken.isEmpty) {
       await _tokenStorage.clear();
       return false;
     }
 
     await _tokenStorage.saveTokens(
-      accessToken: newAccessToken,
-      refreshToken: refreshToken,
+      accessToken: refreshedTokens.accessToken,
+      refreshToken: refreshedTokens.refreshToken,
     );
     return true;
   }

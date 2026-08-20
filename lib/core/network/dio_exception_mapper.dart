@@ -21,7 +21,10 @@ AppException mapDioExceptionToAppException(DioException error) {
   final data = error.response?.data;
 
   if (statusCode == 401) {
-    return const UnauthorizedException();
+    return UnauthorizedException(
+      _extractMessage(data) ?? 'Session expired.',
+      _extractErrorCode(data),
+    );
   }
 
   if (statusCode == 400 || statusCode == 422) {
@@ -44,6 +47,12 @@ AppException mapDioExceptionToAppException(DioException error) {
 
 String? _extractMessage(dynamic data) {
   if (data is Map<String, dynamic>) {
+    final fieldErrors = _extractFieldErrors(data);
+    for (final messages in fieldErrors.values) {
+      if (messages.isNotEmpty && messages.first.trim().isNotEmpty) {
+        return messages.first;
+      }
+    }
     final message = data['description'] ?? data['message'] ?? data['title'];
     if (message != null) return message.toString();
   }

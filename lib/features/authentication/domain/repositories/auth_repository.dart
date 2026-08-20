@@ -8,9 +8,11 @@ abstract class AuthRepository {
   Future<Result<User>> login({required String email, required String password});
 
   Future<Result<void>> register({
-    required String fullName,
+    required String firstName,
+    required String lastName,
     required String email,
     required String password,
+    String? phoneNumber,
   });
 
   Future<Result<void>> verifyEmail({

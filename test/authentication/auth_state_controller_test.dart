@@ -62,9 +62,11 @@ void main() {
     final success = await container
         .read(authStateControllerProvider.notifier)
         .register(
-          fullName: 'Dog User',
+          firstName: 'Dog',
+          lastName: 'User',
           email: 'dog@example.com',
           password: 'password',
+          phoneNumber: null,
         );
 
     expect(success, isTrue);

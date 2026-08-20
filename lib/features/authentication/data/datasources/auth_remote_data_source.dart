@@ -14,10 +14,11 @@ class AuthRemoteDataSource {
     : _authenticatedDio = authenticatedDio,
       _rawDio = rawDio;
 
-  /// Used for calls requiring a bearer token (logout, me).
+  /// Used only for calls requiring a bearer token (`me`).
   final Dio _authenticatedDio;
 
-  /// Used for calls that happen before a session exists (login, register).
+  /// Used for anonymous authentication operations, including logout, whose
+  /// contract authenticates the session through its refresh-token body.
   final Dio _rawDio;
 
   Future<AuthResponseDto> login({
@@ -32,13 +33,21 @@ class AuthRemoteDataSource {
   }
 
   Future<void> register({
-    required String fullName,
+    required String firstName,
+    required String lastName,
     required String email,
     required String password,
+    String? phoneNumber,
   }) async {
-    await _rawDio.post<void>(
+    await _rawDio.post<Map<String, dynamic>>(
       ApiPaths.register,
-      data: {'fullName': fullName, 'email': email, 'password': password},
+      data: {
+        'firstName': firstName,
+        'lastName': lastName,
+        'email': email,
+        'password': password,
+        'phoneNumber': phoneNumber,
+      },
     );
   }
 
@@ -59,8 +68,11 @@ class AuthRemoteDataSource {
     );
   }
 
-  Future<void> logout() async {
-    await _authenticatedDio.post<void>(ApiPaths.logout);
+  Future<void> logout({required String refreshToken}) async {
+    await _rawDio.post<void>(
+      ApiPaths.logout,
+      data: {'refreshToken': refreshToken},
+    );
   }
 
   Future<UserDto> getCurrentUser() async {

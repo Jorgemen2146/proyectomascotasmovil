@@ -19,6 +19,9 @@ class FakeAuthRepository implements AuthRepository {
   int resendCalls = 0;
   String? lastEmail;
   String? lastCode;
+  String? lastFirstName;
+  String? lastLastName;
+  String? lastPhoneNumber;
 
   @override
   Future<Result<User>> login({
@@ -32,12 +35,17 @@ class FakeAuthRepository implements AuthRepository {
 
   @override
   Future<Result<void>> register({
-    required String fullName,
+    required String firstName,
+    required String lastName,
     required String email,
     required String password,
+    String? phoneNumber,
   }) async {
     registerCalls++;
+    lastFirstName = firstName;
+    lastLastName = lastName;
     lastEmail = email;
+    lastPhoneNumber = phoneNumber;
     return registerResult;
   }
 

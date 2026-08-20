@@ -37,15 +37,19 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Result<void>> register({
-    required String fullName,
+    required String firstName,
+    required String lastName,
     required String email,
     required String password,
+    String? phoneNumber,
   }) {
     return _runVoidCall(
       () => _remoteDataSource.register(
-        fullName: fullName,
+        firstName: firstName,
+        lastName: lastName,
         email: email,
         password: password,
+        phoneNumber: phoneNumber,
       ),
     );
   }
@@ -70,7 +74,10 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Result<void>> logout() async {
     try {
-      await _remoteDataSource.logout();
+      final refreshToken = await _tokenStorage.readRefreshToken();
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        await _remoteDataSource.logout(refreshToken: refreshToken);
+      }
     } on DioException {
       // Best-effort: proceed to clear the local session regardless.
     } finally {
@@ -105,7 +112,7 @@ class AuthRepositoryImpl implements AuthRepository {
         accessToken: response.accessToken,
         refreshToken: response.refreshToken,
       );
-      return Result.success(response.user.toDomain());
+      return Result.success(response.toDomain());
     } on DioException catch (e) {
       return Result.failure(
         mapExceptionToFailure(mapDioExceptionToAppException(e)),

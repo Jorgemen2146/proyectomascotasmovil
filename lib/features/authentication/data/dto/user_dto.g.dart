@@ -8,14 +8,16 @@ part of 'user_dto.dart';
 
 _$UserDtoImpl _$$UserDtoImplFromJson(Map<String, dynamic> json) =>
     _$UserDtoImpl(
-      id: json['id'] as String,
+      userId: json['userId'] as String,
       email: json['email'] as String,
-      fullName: json['fullName'] as String,
+      firstName: json['firstName'] as String,
+      lastName: json['lastName'] as String,
     );
 
 Map<String, dynamic> _$$UserDtoImplToJson(_$UserDtoImpl instance) =>
     <String, dynamic>{
-      'id': instance.id,
+      'userId': instance.userId,
       'email': instance.email,
-      'fullName': instance.fullName,
+      'firstName': instance.firstName,
+      'lastName': instance.lastName,
     };

@@ -13,7 +13,7 @@ final secureTokenStorageProvider = Provider<SecureTokenStorage>((ref) {
   return SecureTokenStorage();
 });
 
-/// Raw Dio client for the Identity service with NO auth interceptor.
+/// Raw Gateway client with NO auth interceptor.
 ///
 /// Used exclusively for endpoints that must never trigger a token refresh
 /// themselves: login, register and the refresh call itself. Attaching the
@@ -22,7 +22,7 @@ final gatewayRawDioProvider = Provider<Dio>((ref) {
   return DioClientFactory.create(baseUrl: AppConfig.instance.apiBaseUrl);
 });
 
-/// Authenticated Dio client for the Identity service. Automatically attaches
+/// Authenticated Gateway client. Automatically attaches
 /// the bearer access token, refreshes it exactly once on 401 (single-flight),
 /// retries the failed request, and signals [SessionEvents] on refresh failure.
 final gatewayDioProvider = Provider<Dio>((ref) {
@@ -34,8 +34,7 @@ final gatewayDioProvider = Provider<Dio>((ref) {
     AuthInterceptor(
       dio: dio,
       tokenStorage: tokenStorage,
-      refreshTokenCall: (refreshToken) =>
-          _refreshAccessToken(rawDio, refreshToken),
+      refreshTokenCall: (refreshToken) => _refreshTokens(rawDio, refreshToken),
       onSessionExpired: SessionEvents.notifySessionExpired,
     ),
   );
@@ -43,15 +42,22 @@ final gatewayDioProvider = Provider<Dio>((ref) {
   return dio;
 });
 
-/// Calls the Identity service's refresh endpoint using the raw (non
-/// intercepted) Dio client and extracts the new access token.
-Future<String?> _refreshAccessToken(Dio rawDio, String refreshToken) async {
+/// Calls Identity's Gateway refresh route using the raw client and extracts
+/// the rotated token pair.
+Future<RefreshedTokens?> _refreshTokens(Dio rawDio, String refreshToken) async {
   try {
     final response = await rawDio.post<Map<String, dynamic>>(
       ApiPaths.refresh,
       data: {'refreshToken': refreshToken},
     );
-    return response.data?['accessToken'] as String?;
+    final data = response.data;
+    final accessToken = data?['accessToken'] as String?;
+    final newRefreshToken = data?['refreshToken'] as String?;
+    if (accessToken == null || newRefreshToken == null) return null;
+    return RefreshedTokens(
+      accessToken: accessToken,
+      refreshToken: newRefreshToken,
+    );
   } on DioException {
     return null;
   }

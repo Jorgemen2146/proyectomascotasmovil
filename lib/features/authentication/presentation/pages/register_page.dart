@@ -53,15 +53,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     }
 
     setState(() => _isSubmitting = true);
-    final fullName =
-        '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'
-            .trim();
     final success = await ref
         .read(authStateControllerProvider.notifier)
         .register(
-          fullName: fullName,
+          firstName: _firstNameController.text.trim(),
+          lastName: _lastNameController.text.trim(),
           email: _emailController.text.trim(),
           password: _passwordController.text,
+          phoneNumber: null,
         );
     if (!mounted) return;
     setState(() => _isSubmitting = false);

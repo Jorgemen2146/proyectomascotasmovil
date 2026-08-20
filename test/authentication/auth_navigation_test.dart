@@ -53,6 +53,9 @@ void main() {
 
     expect(find.text('verify:dog@example.com'), findsOneWidget);
     expect(repository.registerCalls, 1);
+    expect(repository.lastFirstName, 'Dog');
+    expect(repository.lastLastName, 'User');
+    expect(repository.lastPhoneNumber, isNull);
     expect(router.routeInformationProvider.value.uri.query, isEmpty);
   });
 

@@ -9,7 +9,7 @@ AppFailure mapExceptionToFailure(Object error) {
     return NetworkFailure(error.message);
   }
   if (error is UnauthorizedException) {
-    return UnauthorizedFailure(error.message);
+    return UnauthorizedFailure(error.message, error.errorCode);
   }
   if (error is ValidationException) {
     return ValidationFailure(error.message, fieldErrors: error.fieldErrors);
