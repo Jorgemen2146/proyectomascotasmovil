@@ -14,15 +14,15 @@ sealed class Result<T> {
 
   /// Returns the success value or `null` if this is a [Failure].
   T? get valueOrNull => switch (this) {
-        Success<T>(value: final v) => v,
-        Failure<T>() => null,
-      };
+    Success<T>(value: final v) => v,
+    Failure<T>() => null,
+  };
 
   /// Returns the failure or `null` if this is a [Success].
   AppFailure? get failureOrNull => switch (this) {
-        Success<T>() => null,
-        Failure<T>(failure: final f) => f,
-      };
+    Success<T>() => null,
+    Failure<T>(failure: final f) => f,
+  };
 
   /// Pattern-matches on the result, forcing callers to handle both cases.
   R when<R>({

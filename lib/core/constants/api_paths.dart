@@ -5,10 +5,11 @@
 class ApiPaths {
   ApiPaths._();
 
-  // Identity service
-  static const String login = '/auth/login';
-  static const String register = '/auth/register';
-  static const String refresh = '/auth/refresh';
-  static const String logout = '/auth/logout';
-  static const String me = '/users/me';
+  static const String login = '/api/v1/auth/login';
+  static const String register = '/api/v1/auth/register';
+  static const String verifyEmail = '/api/v1/auth/verify-email';
+  static const String resendVerification = '/api/v1/auth/resend-verification';
+  static const String refresh = '/api/v1/auth/refresh';
+  static const String logout = '/api/v1/auth/logout';
+  static const String me = '/api/v1/auth/me';
 }

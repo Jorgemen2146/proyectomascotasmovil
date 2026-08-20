@@ -37,7 +37,8 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
       prefixIcon: AppIcons.lock,
       textInputAction: widget.textInputAction ?? TextInputAction.next,
       autofillHints: widget.autofillHints ?? const [AutofillHints.password],
-      validator: widget.validator ??
+      validator:
+          widget.validator ??
           (value) => (value == null || value.length < 6)
               ? 'Mínimo 6 caracteres'
               : null,

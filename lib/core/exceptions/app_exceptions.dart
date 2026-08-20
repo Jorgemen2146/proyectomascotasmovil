@@ -19,12 +19,10 @@ class NetworkException extends AppException {
 
 /// Server responded with a 4xx/5xx status code.
 class ServerException extends AppException {
-  const ServerException(
-    super.message, {
-    this.statusCode,
-  });
+  const ServerException(super.message, {this.statusCode, this.errorCode});
 
   final int? statusCode;
+  final String? errorCode;
 }
 
 /// 401 Unauthorized after a failed (or absent) token refresh.
@@ -34,10 +32,7 @@ class UnauthorizedException extends AppException {
 
 /// Request payload failed validation on the server (422/400 with field errors).
 class ValidationException extends AppException {
-  const ValidationException(
-    super.message, {
-    this.fieldErrors = const {},
-  });
+  const ValidationException(super.message, {this.fieldErrors = const {}});
 
   final Map<String, List<String>> fieldErrors;
 }

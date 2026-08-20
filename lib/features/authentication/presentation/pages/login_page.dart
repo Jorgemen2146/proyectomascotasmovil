@@ -41,14 +41,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSubmitting = true);
-    final success = await ref.read(authStateControllerProvider.notifier).login(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-        );
+    final email = _emailController.text.trim();
+    final outcome = await ref
+        .read(authStateControllerProvider.notifier)
+        .login(email: email, password: _passwordController.text);
     if (!mounted) return;
     setState(() => _isSubmitting = false);
 
-    if (!success) {
+    if (outcome == LoginOutcome.emailNotVerified) {
+      context.go(AppRoutes.verifyEmail, extra: email);
+      return;
+    }
+
+    if (outcome == LoginOutcome.failure) {
       final message = ref.read(authStateControllerProvider).errorMessage;
       AppSnackBar.showError(context, message ?? 'No se pudo iniciar sesión.');
     }
@@ -125,8 +130,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     const SizedBox(height: AppSpacing.lg),
                     const SocialLoginRow(),
                     const SizedBox(height: AppSpacing.lg),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Text(
                           '¿No tienes cuenta? ',

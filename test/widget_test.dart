@@ -18,4 +18,3 @@ void main() {
     expect(find.byIcon(Icons.pets), findsOneWidget);
   });
 }
-

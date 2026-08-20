@@ -8,23 +8,15 @@ import 'environment.dart';
 class AppConfig {
   AppConfig._({
     required this.environment,
-    required this.identityBaseUrl,
-    required this.petsBaseUrl,
-    required this.genealogyBaseUrl,
+    required this.apiBaseUrl,
     required this.connectTimeoutMs,
     required this.receiveTimeoutMs,
   });
 
   final Environment environment;
 
-  /// Identity microservice base URL (authentication, users).
-  final String identityBaseUrl;
-
-  /// Pets microservice base URL.
-  final String petsBaseUrl;
-
-  /// Genealogy microservice base URL.
-  final String genealogyBaseUrl;
+  /// Single public entry point for every backend API.
+  final String apiBaseUrl;
 
   final int connectTimeoutMs;
   final int receiveTimeoutMs;
@@ -46,32 +38,36 @@ class AppConfig {
   /// Initializes the singleton configuration for the given [environment].
   static AppConfig init({
     required Environment environment,
+    String? apiBaseUrl,
   }) {
+    const definedBaseUrl = String.fromEnvironment('API_BASE_URL');
+    final override = apiBaseUrl ?? definedBaseUrl;
+    final defaultBaseUrl = switch (environment) {
+      Environment.dev => 'http://10.0.2.2:5101',
+      Environment.qa => 'https://api-qa.dogplatform.com',
+      Environment.prod => 'https://api.dogplatform.com',
+    };
+    final resolvedBaseUrl = (override.isEmpty ? defaultBaseUrl : override)
+        .replaceFirst(RegExp(r'/+$'), '');
     final config = switch (environment) {
       Environment.dev => AppConfig._(
-          environment: Environment.dev,
-          identityBaseUrl: 'https://api-dev.dogplatform.com/identity',
-          petsBaseUrl: 'https://api-dev.dogplatform.com/pets',
-          genealogyBaseUrl: 'https://api-dev.dogplatform.com/genealogy',
-          connectTimeoutMs: 15000,
-          receiveTimeoutMs: 15000,
-        ),
+        environment: Environment.dev,
+        apiBaseUrl: resolvedBaseUrl,
+        connectTimeoutMs: 15000,
+        receiveTimeoutMs: 15000,
+      ),
       Environment.qa => AppConfig._(
-          environment: Environment.qa,
-          identityBaseUrl: 'https://api-qa.dogplatform.com/identity',
-          petsBaseUrl: 'https://api-qa.dogplatform.com/pets',
-          genealogyBaseUrl: 'https://api-qa.dogplatform.com/genealogy',
-          connectTimeoutMs: 15000,
-          receiveTimeoutMs: 15000,
-        ),
+        environment: Environment.qa,
+        apiBaseUrl: resolvedBaseUrl,
+        connectTimeoutMs: 15000,
+        receiveTimeoutMs: 15000,
+      ),
       Environment.prod => AppConfig._(
-          environment: Environment.prod,
-          identityBaseUrl: 'https://api.dogplatform.com/identity',
-          petsBaseUrl: 'https://api.dogplatform.com/pets',
-          genealogyBaseUrl: 'https://api.dogplatform.com/genealogy',
-          connectTimeoutMs: 10000,
-          receiveTimeoutMs: 10000,
-        ),
+        environment: Environment.prod,
+        apiBaseUrl: resolvedBaseUrl,
+        connectTimeoutMs: 10000,
+        receiveTimeoutMs: 10000,
+      ),
     };
     _instance = config;
     return config;

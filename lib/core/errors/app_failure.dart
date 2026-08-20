@@ -12,9 +12,10 @@ class NetworkFailure extends AppFailure {
 }
 
 class ServerFailure extends AppFailure {
-  const ServerFailure(super.message, {this.statusCode});
+  const ServerFailure(super.message, {this.statusCode, this.errorCode});
 
   final int? statusCode;
+  final String? errorCode;
 }
 
 class UnauthorizedFailure extends AppFailure {
@@ -22,10 +23,7 @@ class UnauthorizedFailure extends AppFailure {
 }
 
 class ValidationFailure extends AppFailure {
-  const ValidationFailure(
-    super.message, {
-    this.fieldErrors = const {},
-  });
+  const ValidationFailure(super.message, {this.fieldErrors = const {}});
 
   final Map<String, List<String>> fieldErrors;
 }

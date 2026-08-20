@@ -7,15 +7,17 @@ import '../domain/repositories/auth_repository.dart';
 import 'usecases/get_current_user_usecase.dart';
 import 'usecases/login_usecase.dart';
 import 'usecases/logout_usecase.dart';
+import 'usecases/resend_verification_usecase.dart';
 import 'usecases/register_usecase.dart';
+import 'usecases/verify_email_usecase.dart';
 
 /// Dependency wiring for the authentication feature. Kept in one place so
 /// the composition root (`main.dart`) never needs to know about internal
 /// feature classes.
 final authRemoteDataSourceProvider = Provider<AuthRemoteDataSource>((ref) {
   return AuthRemoteDataSource(
-    authenticatedDio: ref.read(identityDioProvider),
-    rawDio: ref.read(identityRawDioProvider),
+    authenticatedDio: ref.read(gatewayDioProvider),
+    rawDio: ref.read(gatewayRawDioProvider),
   );
 });
 
@@ -32,6 +34,16 @@ final loginUseCaseProvider = Provider<LoginUseCase>((ref) {
 
 final registerUseCaseProvider = Provider<RegisterUseCase>((ref) {
   return RegisterUseCase(ref.read(authRepositoryProvider));
+});
+
+final verifyEmailUseCaseProvider = Provider<VerifyEmailUseCase>((ref) {
+  return VerifyEmailUseCase(ref.read(authRepositoryProvider));
+});
+
+final resendVerificationUseCaseProvider = Provider<ResendVerificationUseCase>((
+  ref,
+) {
+  return ResendVerificationUseCase(ref.read(authRepositoryProvider));
 });
 
 final logoutUseCaseProvider = Provider<LogoutUseCase>((ref) {

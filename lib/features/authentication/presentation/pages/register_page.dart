@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_icons.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -55,7 +56,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     final fullName =
         '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'
             .trim();
-    final success = await ref.read(authStateControllerProvider.notifier).register(
+    final success = await ref
+        .read(authStateControllerProvider.notifier)
+        .register(
           fullName: fullName,
           email: _emailController.text.trim(),
           password: _passwordController.text,
@@ -66,7 +69,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     if (!success) {
       final message = ref.read(authStateControllerProvider).errorMessage;
       AppSnackBar.showError(context, message ?? 'No se pudo crear la cuenta.');
+      return;
     }
+
+    context.go(AppRoutes.verifyEmail, extra: _emailController.text.trim());
   }
 
   @override
@@ -105,7 +111,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                       controller: _firstNameController,
                       prefixIcon: AppIcons.person,
                       textInputAction: TextInputAction.next,
-                      validator: (value) => (value == null || value.trim().isEmpty)
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
                           ? 'Requerido'
                           : null,
                     ),
@@ -115,7 +122,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                       controller: _lastNameController,
                       prefixIcon: AppIcons.person,
                       textInputAction: TextInputAction.next,
-                      validator: (value) => (value == null || value.trim().isEmpty)
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
                           ? 'Requerido'
                           : null,
                     ),

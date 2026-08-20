@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/services/session_events.dart';
+import '../../../core/errors/app_failure.dart';
 import 'auth_state.dart';
 import 'providers.dart';
 
@@ -32,25 +33,33 @@ class AuthStateController extends Notifier<AuthState> {
 
     final result = await ref.read(getCurrentUserUseCaseProvider).call();
     state = result.when(
-      success: (user) => AuthState(status: AuthStatus.authenticated, user: user),
+      success: (user) =>
+          AuthState(status: AuthStatus.authenticated, user: user),
       failure: (_) => const AuthState(status: AuthStatus.unauthenticated),
     );
   }
 
-  Future<bool> login({required String email, required String password}) async {
+  Future<LoginOutcome> login({
+    required String email,
+    required String password,
+  }) async {
     state = state.copyWith(errorMessage: null);
-    final result = await ref.read(loginUseCaseProvider).call(
-          email: email,
-          password: password,
-        );
+    final result = await ref
+        .read(loginUseCaseProvider)
+        .call(email: email, password: password);
     return result.when(
       success: (user) {
         state = AuthState(status: AuthStatus.authenticated, user: user);
-        return true;
+        return LoginOutcome.success;
       },
       failure: (failure) {
         state = state.copyWith(errorMessage: failure.message);
-        return false;
+        if (failure is ServerFailure &&
+            failure.statusCode == 403 &&
+            failure.errorCode == 'EMAIL_NOT_VERIFIED') {
+          return LoginOutcome.emailNotVerified;
+        }
+        return LoginOutcome.failure;
       },
     );
   }
@@ -61,14 +70,12 @@ class AuthStateController extends Notifier<AuthState> {
     required String password,
   }) async {
     state = state.copyWith(errorMessage: null);
-    final result = await ref.read(registerUseCaseProvider).call(
-          fullName: fullName,
-          email: email,
-          password: password,
-        );
+    final result = await ref
+        .read(registerUseCaseProvider)
+        .call(fullName: fullName, email: email, password: password);
     return result.when(
-      success: (user) {
-        state = AuthState(status: AuthStatus.authenticated, user: user);
+      success: (_) {
+        state = const AuthState(status: AuthStatus.unauthenticated);
         return true;
       },
       failure: (failure) {
@@ -86,3 +93,5 @@ class AuthStateController extends Notifier<AuthState> {
 
 final authStateControllerProvider =
     NotifierProvider<AuthStateController, AuthState>(AuthStateController.new);
+
+enum LoginOutcome { success, emailNotVerified, failure }

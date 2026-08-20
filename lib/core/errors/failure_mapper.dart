@@ -15,7 +15,11 @@ AppFailure mapExceptionToFailure(Object error) {
     return ValidationFailure(error.message, fieldErrors: error.fieldErrors);
   }
   if (error is ServerException) {
-    return ServerFailure(error.message, statusCode: error.statusCode);
+    return ServerFailure(
+      error.message,
+      statusCode: error.statusCode,
+      errorCode: error.errorCode,
+    );
   }
   if (error is AppException) {
     return UnknownFailure(error.message);

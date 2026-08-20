@@ -9,38 +9,38 @@ class AppTypography {
   AppTypography._();
 
   static TextStyle get h1 => GoogleFonts.poppins(
-        fontSize: 24,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
-      );
+    fontSize: 24,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+  );
 
   static TextStyle get h2 => GoogleFonts.poppins(
-        fontSize: 20,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-      );
+    fontSize: 20,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+  );
 
   static TextStyle get h3 => GoogleFonts.poppins(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-      );
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+  );
 
   static TextStyle get body => GoogleFonts.poppins(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textPrimary,
-      );
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textPrimary,
+  );
 
   static TextStyle get bodySecondary => GoogleFonts.poppins(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textSecondary,
-      );
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textSecondary,
+  );
 
   static TextStyle get caption => GoogleFonts.poppins(
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textSecondary,
-      );
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textSecondary,
+  );
 }

@@ -28,7 +28,8 @@ class AppEmailField extends StatelessWidget {
       prefixIcon: AppIcons.email,
       textInputAction: textInputAction ?? TextInputAction.next,
       autofillHints: const [AutofillHints.email],
-      validator: validator ??
+      validator:
+          validator ??
           (value) => (value == null || !value.contains('@'))
               ? 'Ingresa un correo válido'
               : null,

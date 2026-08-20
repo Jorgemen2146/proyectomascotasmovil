@@ -8,7 +8,7 @@ import '../constants/storage_keys.dart';
 /// on-device.
 class SecureTokenStorage {
   SecureTokenStorage({FlutterSecureStorage? storage})
-      : _storage = storage ?? const FlutterSecureStorage();
+    : _storage = storage ?? const FlutterSecureStorage();
 
   final FlutterSecureStorage _storage;
 
@@ -22,7 +22,8 @@ class SecureTokenStorage {
     ]);
   }
 
-  Future<String?> readAccessToken() => _storage.read(key: StorageKeys.accessToken);
+  Future<String?> readAccessToken() =>
+      _storage.read(key: StorageKeys.accessToken);
 
   Future<String?> readRefreshToken() =>
       _storage.read(key: StorageKeys.refreshToken);

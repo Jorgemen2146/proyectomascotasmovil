@@ -16,6 +16,8 @@ class GoRouterRefreshNotifier extends ChangeNotifier {
   }
 }
 
-final goRouterRefreshNotifierProvider = Provider<GoRouterRefreshNotifier>((ref) {
+final goRouterRefreshNotifierProvider = Provider<GoRouterRefreshNotifier>((
+  ref,
+) {
   return GoRouterRefreshNotifier(ref);
 });

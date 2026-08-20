@@ -6,18 +6,18 @@ class AppShadows {
   AppShadows._();
 
   static List<BoxShadow> get soft => [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.05),
-          blurRadius: 16,
-          offset: const Offset(0, 6),
-        ),
-      ];
+    BoxShadow(
+      color: Colors.black.withValues(alpha: 0.05),
+      blurRadius: 16,
+      offset: const Offset(0, 6),
+    ),
+  ];
 
   static List<BoxShadow> get subtle => [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.04),
-          blurRadius: 8,
-          offset: const Offset(0, 2),
-        ),
-      ];
+    BoxShadow(
+      color: Colors.black.withValues(alpha: 0.04),
+      blurRadius: 8,
+      offset: const Offset(0, 2),
+    ),
+  ];
 }

@@ -1,5 +1,4 @@
 import '../../../../core/result/result.dart';
-import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
 
 /// Encapsulates the registration business operation.
@@ -8,7 +7,7 @@ class RegisterUseCase {
 
   final AuthRepository _repository;
 
-  Future<Result<User>> call({
+  Future<Result<void>> call({
     required String fullName,
     required String email,
     required String password,

@@ -53,28 +53,28 @@ class AppButton extends StatelessWidget {
 
     return switch (variant) {
       AppButtonVariant.primary => ElevatedButton(
-          onPressed: effectiveOnPressed,
-          child: child,
-        ),
+        onPressed: effectiveOnPressed,
+        child: child,
+      ),
       AppButtonVariant.secondary => ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.success,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor: AppColors.success.withValues(alpha: 0.4),
-            minimumSize: const Size.fromHeight(52),
-            shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
-          ),
-          onPressed: effectiveOnPressed,
-          child: child,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.success,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: AppColors.success.withValues(alpha: 0.4),
+          minimumSize: const Size.fromHeight(52),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
         ),
+        onPressed: effectiveOnPressed,
+        child: child,
+      ),
       AppButtonVariant.outlined => OutlinedButton(
-          onPressed: effectiveOnPressed,
-          child: child,
-        ),
+        onPressed: effectiveOnPressed,
+        child: child,
+      ),
       AppButtonVariant.text => TextButton(
-          onPressed: effectiveOnPressed,
-          child: child,
-        ),
+        onPressed: effectiveOnPressed,
+        child: child,
+      ),
     };
   }
 }
@@ -90,11 +90,7 @@ class _ButtonContent extends StatelessWidget {
     if (icon == null) return Text(label);
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 18),
-        const SizedBox(width: 8),
-        Text(label),
-      ],
+      children: [Icon(icon, size: 18), const SizedBox(width: 8), Text(label)],
     );
   }
 }
@@ -116,10 +112,7 @@ class _ButtonLoadingContent extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        Text(
-          'Cargando',
-          style: DefaultTextStyle.of(context).style,
-        ),
+        Text('Cargando', style: DefaultTextStyle.of(context).style),
       ],
     );
   }

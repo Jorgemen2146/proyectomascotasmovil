@@ -29,9 +29,10 @@ class _SplashPageState extends ConsumerState<SplashPage>
     parent: _controller,
     curve: const Interval(0, 0.7, curve: Curves.easeOut),
   );
-  late final Animation<double> _scale = Tween(begin: 0.85, end: 1.0).animate(
-    CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-  );
+  late final Animation<double> _scale = Tween(
+    begin: 0.85,
+    end: 1.0,
+  ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
 
   @override
   void dispose() {

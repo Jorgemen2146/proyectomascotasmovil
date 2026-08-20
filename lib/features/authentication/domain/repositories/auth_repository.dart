@@ -5,16 +5,20 @@ import '../entities/user.dart';
 /// provides the concrete implementation; application/presentation code only
 /// ever depends on this abstraction.
 abstract class AuthRepository {
-  Future<Result<User>> login({
-    required String email,
-    required String password,
-  });
+  Future<Result<User>> login({required String email, required String password});
 
-  Future<Result<User>> register({
+  Future<Result<void>> register({
     required String fullName,
     required String email,
     required String password,
   });
+
+  Future<Result<void>> verifyEmail({
+    required String email,
+    required String code,
+  });
+
+  Future<Result<void>> resendVerification({required String email});
 
   Future<Result<void>> logout();
 

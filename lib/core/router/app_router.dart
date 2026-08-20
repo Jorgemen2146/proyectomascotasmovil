@@ -6,6 +6,7 @@ import '../../features/authentication/application/auth_state_controller.dart';
 import '../../features/authentication/presentation/pages/login_page.dart';
 import '../../features/authentication/presentation/pages/register_page.dart';
 import '../../features/authentication/presentation/pages/splash_page.dart';
+import '../../features/authentication/presentation/pages/verify_email_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../widgets/placeholder_page.dart';
 import 'app_routes.dart';
@@ -33,6 +34,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.register,
         builder: (context, state) => const RegisterPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.verifyEmail,
+        redirect: (context, state) {
+          final email = state.extra as String?;
+          return email == null || email.trim().isEmpty ? AppRoutes.login : null;
+        },
+        builder: (context, state) =>
+            VerifyEmailPage(email: state.extra! as String),
       ),
       GoRoute(
         path: AppRoutes.home,
@@ -66,7 +76,10 @@ String? _redirect(Ref ref, GoRouterState state) {
   final authState = ref.read(authStateControllerProvider);
   final location = state.matchedLocation;
   final isSplash = location == AppRoutes.splash;
-  final isAuthRoute = location == AppRoutes.login || location == AppRoutes.register;
+  final isAuthRoute =
+      location == AppRoutes.login ||
+      location == AppRoutes.register ||
+      location == AppRoutes.verifyEmail;
 
   switch (authState.status) {
     case AuthStatus.unknown:

@@ -35,6 +35,7 @@ AppException mapDioExceptionToAppException(DioException error) {
     return ServerException(
       _extractMessage(data) ?? 'Request failed with status $statusCode.',
       statusCode: statusCode,
+      errorCode: _extractErrorCode(data),
     );
   }
 
@@ -43,8 +44,15 @@ AppException mapDioExceptionToAppException(DioException error) {
 
 String? _extractMessage(dynamic data) {
   if (data is Map<String, dynamic>) {
-    final message = data['message'] ?? data['title'];
+    final message = data['description'] ?? data['message'] ?? data['title'];
     if (message != null) return message.toString();
+  }
+  return null;
+}
+
+String? _extractErrorCode(dynamic data) {
+  if (data is Map<String, dynamic>) {
+    return data['error']?.toString();
   }
   return null;
 }

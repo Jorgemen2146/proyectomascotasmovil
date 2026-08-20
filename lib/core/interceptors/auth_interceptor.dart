@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_initializing_formals
+
 import 'dart:async';
 
 import 'package:dio/dio.dart';
@@ -22,9 +24,9 @@ class AuthInterceptor extends Interceptor {
     required SecureTokenStorage tokenStorage,
     required RefreshTokenCall refreshTokenCall,
     required this.onSessionExpired,
-  })  : _dio = dio,
-        _tokenStorage = tokenStorage,
-        _refreshTokenCall = refreshTokenCall;
+  }) : _dio = dio,
+       _tokenStorage = tokenStorage,
+       _refreshTokenCall = refreshTokenCall;
 
   final Dio _dio;
   final SecureTokenStorage _tokenStorage;
@@ -86,11 +88,14 @@ class AuthInterceptor extends Interceptor {
 
     final completer = Completer<bool>();
     _refreshCompleter = completer;
-    _performRefresh().then(completer.complete).catchError((_) {
-      completer.complete(false);
-    }).whenComplete(() {
-      _refreshCompleter = null;
-    });
+    _performRefresh()
+        .then(completer.complete)
+        .catchError((_) {
+          completer.complete(false);
+        })
+        .whenComplete(() {
+          _refreshCompleter = null;
+        });
     return completer.future;
   }
 
