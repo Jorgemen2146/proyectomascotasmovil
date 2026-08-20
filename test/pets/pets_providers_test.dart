@@ -74,4 +74,19 @@ void main() {
       contains('5 MB'),
     );
   });
+
+  test('controller establece foto principal', () async {
+    final repository = FakePetsRepository();
+    final container = ProviderContainer(
+      overrides: [petsRepositoryProvider.overrideWithValue(repository)],
+    );
+    addTearDown(container.dispose);
+
+    final result = await container
+        .read(petPhotoControllerProvider.notifier)
+        .setMain('pet-1', 'photo-1');
+
+    expect(result.isSuccess, isTrue);
+    expect(repository.setMainPhotoCalls, 1);
+  });
 }

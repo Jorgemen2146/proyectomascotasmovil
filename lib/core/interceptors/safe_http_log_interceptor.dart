@@ -35,6 +35,7 @@ class SafeHttpLogInterceptor extends Interceptor {
 }
 
 dynamic sanitizeHttpValue(dynamic value) {
+  if (value is Uint8List) return '<binary ${value.length} bytes>';
   if (value is Map) {
     return value.map((key, dynamic nestedValue) {
       final normalizedKey = key.toString().toLowerCase();

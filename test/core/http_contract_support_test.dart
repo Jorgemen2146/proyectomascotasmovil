@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:dogplatform/core/errors/app_failure.dart';
 import 'package:dogplatform/core/errors/failure_mapper.dart';
@@ -49,5 +51,12 @@ void main() {
     expect((sanitized['tokens'] as Map)['accessToken'], '***');
     expect((sanitized['tokens'] as Map)['refreshToken'], '***');
     expect(sanitized['Authorization'], '***');
+  });
+
+  test('logging no imprime los bytes de una imagen', () {
+    expect(
+      sanitizeHttpValue(Uint8List.fromList([1, 2, 3, 4])),
+      '<binary 4 bytes>',
+    );
   });
 }

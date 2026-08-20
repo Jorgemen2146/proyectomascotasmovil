@@ -25,4 +25,6 @@ class ApiPaths {
   static String confirmPhoto(String petId) => '${petPhotos(petId)}/confirm';
   static String petPhoto(String petId, String photoId) =>
       '${petPhotos(petId)}/$photoId';
+  static String mainPetPhoto(String petId, String photoId) =>
+      '${petPhoto(petId, photoId)}/main';
 }

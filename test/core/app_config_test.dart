@@ -33,5 +33,25 @@ void main() {
       GatewayUrlResolver.resolve('https://cdn.example.test/pet.jpg'),
       'https://cdn.example.test/pet.jpg',
     );
+    expect(GatewayUrlResolver.isGatewayUrl('/uploads/pet.jpg'), isTrue);
+    expect(
+      GatewayUrlResolver.isGatewayUrl('https://cdn.example.test/pet.jpg'),
+      isFalse,
+    );
+  });
+
+  test('resolver adapta localhost del Gateway al host del emulador', () {
+    AppConfig.init(
+      environment: Environment.dev,
+      apiBaseUrl: 'http://10.0.2.2:5101',
+    );
+
+    const localPhoto =
+        'http://localhost:5101/api/v1/pets/pet-1/photos/content/key';
+    expect(GatewayUrlResolver.isGatewayUrl(localPhoto), isTrue);
+    expect(
+      GatewayUrlResolver.resolve(localPhoto),
+      'http://10.0.2.2:5101/api/v1/pets/pet-1/photos/content/key',
+    );
   });
 }

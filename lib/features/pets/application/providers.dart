@@ -132,6 +132,19 @@ class PetPhotoController extends AutoDisposeNotifier<bool> {
     return result;
   }
 
+  Future<Result<void>> setMain(String petId, String photoId) async {
+    if (state) {
+      return const Result.failure(UnknownFailure('Operación en curso.'));
+    }
+    state = true;
+    final result = await ref
+        .read(petsRepositoryProvider)
+        .setMainPhoto(petId, photoId);
+    state = false;
+    if (result.isSuccess) _invalidate(petId);
+    return result;
+  }
+
   void _invalidate(String petId) {
     ref.invalidate(petPhotosProvider(petId));
     ref.invalidate(petDetailsProvider(petId));

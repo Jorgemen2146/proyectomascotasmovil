@@ -94,4 +94,27 @@ void main() {
     expect(find.text('Principal'), findsOneWidget);
     expect(find.byIcon(Icons.delete_outline), findsOneWidget);
   });
+
+  testWidgets('galería permite seleccionar una foto no principal', (
+    tester,
+  ) async {
+    final photo = PetPhoto(
+      photoId: 'photo-2',
+      petId: 'pet-1',
+      url: '',
+      isMain: false,
+      createdAt: DateTime.utc(2026),
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          petPhotosProvider.overrideWith((ref, petId) async => [photo]),
+        ],
+        child: const MaterialApp(home: PetPhotosPage(petId: 'pet-1')),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.star_outline), findsOneWidget);
+  });
 }

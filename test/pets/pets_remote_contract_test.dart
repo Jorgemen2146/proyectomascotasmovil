@@ -79,57 +79,110 @@ void main() {
     expect(gateway.requests[1].method, 'PUT');
   });
 
-  test('upload ejecuta upload-url, bytes sin Gateway y confirm', () async {
+  test(
+    'upload S3 ejecuta upload-url, bytes externos sin Gateway y confirm',
+    () async {
+      final gateway = _RecordingDio((request) {
+        if (request.path.endsWith('/upload-url')) {
+          return {
+            'objectKey': 'pets/pet-1/luna.jpg',
+            'uploadUrl': 'https://storage.example.test/upload',
+            'expiresAtUtc': '2030-01-01T00:00:00Z',
+            'requiredHeaders': {'x-storage-header': 'value'},
+            'method': 'PUT',
+          };
+        }
+        return {
+          'photoId': 'photo-1',
+          'petId': 'pet-1',
+          'url': '/photos/luna.jpg',
+          'isMain': true,
+          'createdAt': '2026-01-01T00:00:00Z',
+        };
+      });
+      final upload = _RecordingDio((_) => null);
+      final repository = PetsRepositoryImpl(
+        PetsRemoteDataSource(dio: gateway.dio, uploadDio: upload.dio),
+      );
+      final bytes = Uint8List.fromList([1, 2, 3, 4]);
+      final photo = SelectedPhoto(
+        file: XFile.fromData(bytes, name: 'luna.jpg', mimeType: 'image/jpeg'),
+        fileName: 'luna.jpg',
+        contentType: 'image/jpeg',
+        fileSize: bytes.length,
+      );
+
+      final result = await repository.uploadPhoto('pet-1', photo);
+
+      expect(result.isSuccess, isTrue);
+      expect(gateway.requests[0].path, ApiPaths.photoUploadUrl('pet-1'));
+      expect(gateway.requests[0].data, {
+        'fileName': 'luna.jpg',
+        'contentType': 'image/jpeg',
+        'fileSize': 4,
+      });
+      expect(
+        upload.requests.single.uri.toString(),
+        'https://storage.example.test/upload',
+      );
+      expect(upload.requests.single.method, 'PUT');
+      expect(upload.requests.single.data, isA<Uint8List>());
+      expect(upload.requests.single.headers['x-storage-header'], 'value');
+      expect(
+        upload.requests.single.headers.containsKey('Authorization'),
+        isFalse,
+      );
+      expect(gateway.requests[1].path, ApiPaths.confirmPhoto('pet-1'));
+      expect(gateway.requests[1].data, {'objectKey': 'pets/pet-1/luna.jpg'});
+    },
+  );
+
+  test('upload Local usa Gateway autenticado y adapta localhost', () async {
+    AppConfig.init(
+      environment: Environment.dev,
+      apiBaseUrl: 'http://10.0.2.2:5101',
+    );
     final gateway = _RecordingDio((request) {
       if (request.path.endsWith('/upload-url')) {
         return {
-          'objectKey': 'pets/pet-1/luna.jpg',
-          'uploadUrl': 'https://storage.example.test/upload',
-          'expiresAtUtc': '2030-01-01T00:00:00Z',
-          'requiredHeaders': {'x-storage-header': 'value'},
+          'objectKey': 'pets/user-1/pet-1/2026/08/photo.jpg',
+          'uploadUrl':
+              'http://localhost:5101/api/v1/pets/pet-1/photos/upload/token',
           'method': 'PUT',
+          'expiresAtUtc': '2030-01-01T00:00:00Z',
+          'requiredHeaders': {'Content-Type': 'image/jpeg'},
         };
       }
-      return {
-        'photoId': 'photo-1',
-        'petId': 'pet-1',
-        'url': '/photos/luna.jpg',
-        'isMain': true,
-        'createdAt': '2026-01-01T00:00:00Z',
-      };
+      return null;
     });
-    final upload = _RecordingDio((_) => null);
-    final repository = PetsRepositoryImpl(
-      PetsRemoteDataSource(dio: gateway.dio, uploadDio: upload.dio),
+    final externalStorage = _RecordingDio((_) => null);
+    final source = PetsRemoteDataSource(
+      dio: gateway.dio,
+      uploadDio: externalStorage.dio,
     );
-    final bytes = Uint8List.fromList([1, 2, 3, 4]);
-    final photo = SelectedPhoto(
-      file: XFile.fromData(bytes, name: 'luna.jpg', mimeType: 'image/jpeg'),
+    final ticket = (await source.createPhotoUploadUrl(
+      petId: 'pet-1',
       fileName: 'luna.jpg',
       contentType: 'image/jpeg',
-      fileSize: bytes.length,
+      fileSize: 4,
+    )).toDomain();
+
+    await source.uploadBytes(
+      ticket: ticket,
+      bytes: Uint8List.fromList([1, 2, 3, 4]),
+      contentType: 'image/jpeg',
     );
 
-    final result = await repository.uploadPhoto('pet-1', photo);
-
-    expect(result.isSuccess, isTrue);
-    expect(gateway.requests[0].path, ApiPaths.photoUploadUrl('pet-1'));
-    expect(gateway.requests[0].data, {
-      'fileName': 'luna.jpg',
-      'contentType': 'image/jpeg',
-      'fileSize': 4,
-    });
+    expect(externalStorage.requests, isEmpty);
+    expect(gateway.requests[1].method, 'PUT');
     expect(
-      upload.requests.single.uri.toString(),
-      'https://storage.example.test/upload',
+      gateway.requests[1].uri.toString(),
+      'http://10.0.2.2:5101/api/v1/pets/pet-1/photos/upload/token',
     );
-    expect(upload.requests.single.method, 'PUT');
-    expect(upload.requests.single.data, isA<Uint8List>());
-    expect(gateway.requests[1].path, ApiPaths.confirmPhoto('pet-1'));
-    expect(gateway.requests[1].data, {'objectKey': 'pets/pet-1/luna.jpg'});
+    expect(gateway.requests[1].headers['Content-Type'], 'image/jpeg');
   });
 
-  test('galería y eliminar foto usan contratos exactos', () async {
+  test('galería, principal y eliminar foto usan contratos exactos', () async {
     final gateway = _RecordingDio((request) {
       if (request.method == 'GET') {
         return [
@@ -147,12 +200,16 @@ void main() {
     final source = PetsRemoteDataSource(dio: gateway.dio);
 
     final photos = await source.getPhotos('pet-1');
+    await source.setMainPhoto('pet-1', 'photo-1');
     await source.deletePhoto('pet-1', 'photo-1');
 
     expect(photos.single.photoId, 'photo-1');
     expect(gateway.requests[0].path, '/api/v1/pets/pet-1/photos');
-    expect(gateway.requests[1].method, 'DELETE');
-    expect(gateway.requests[1].path, '/api/v1/pets/pet-1/photos/photo-1');
+    expect(gateway.requests[1].method, 'PUT');
+    expect(gateway.requests[1].path, '/api/v1/pets/pet-1/photos/photo-1/main');
+    expect(gateway.requests[1].data, isNull);
+    expect(gateway.requests[2].method, 'DELETE');
+    expect(gateway.requests[2].path, '/api/v1/pets/pet-1/photos/photo-1');
   });
 }
 

@@ -12,5 +12,6 @@ abstract class PetsRepository {
   Future<Result<void>> deletePet(String petId);
   Future<Result<List<PetPhoto>>> getPhotos(String petId);
   Future<Result<void>> uploadPhoto(String petId, SelectedPhoto photo);
+  Future<Result<void>> setMainPhoto(String petId, String photoId);
   Future<Result<void>> deletePhoto(String petId, String photoId);
 }

@@ -80,6 +80,10 @@ class PetsRepositoryImpl implements PetsRepository {
   Future<Result<void>> deletePhoto(String petId, String photoId) =>
       _run(() => _remoteDataSource.deletePhoto(petId, photoId));
 
+  @override
+  Future<Result<void>> setMainPhoto(String petId, String photoId) =>
+      _run(() => _remoteDataSource.setMainPhoto(petId, photoId));
+
   Future<Result<T>> _run<T>(Future<T> Function() operation) async {
     try {
       return Result.success(await operation());

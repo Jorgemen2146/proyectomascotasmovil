@@ -15,6 +15,7 @@ class FakePetsRepository implements PetsRepository {
   int updateCalls = 0;
   int deleteCalls = 0;
   int uploadCalls = 0;
+  int setMainPhotoCalls = 0;
   int deletePhotoCalls = 0;
   PetDraft? lastDraft;
 
@@ -68,6 +69,12 @@ class FakePetsRepository implements PetsRepository {
   @override
   Future<Result<void>> deletePhoto(String petId, String photoId) async {
     deletePhotoCalls++;
+    return const Result.success(null);
+  }
+
+  @override
+  Future<Result<void>> setMainPhoto(String petId, String photoId) async {
+    setMainPhotoCalls++;
     return const Result.success(null);
   }
 }

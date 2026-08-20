@@ -108,7 +108,10 @@ class PetsRemoteDataSource {
     );
     if (!hasContentType) headers['Content-Type'] = contentType;
 
-    await _uploadDio.request<void>(
+    final uploadClient = GatewayUrlResolver.isGatewayUrl(ticket.uploadUrl)
+        ? _dio
+        : _uploadDio;
+    await uploadClient.request<void>(
       GatewayUrlResolver.resolve(ticket.uploadUrl),
       data: bytes,
       options: Options(method: ticket.method.toUpperCase(), headers: headers),
@@ -124,5 +127,9 @@ class PetsRemoteDataSource {
 
   Future<void> deletePhoto(String petId, String photoId) async {
     await _dio.delete<void>(ApiPaths.petPhoto(petId, photoId));
+  }
+
+  Future<void> setMainPhoto(String petId, String photoId) async {
+    await _dio.put<void>(ApiPaths.mainPetPhoto(petId, photoId));
   }
 }

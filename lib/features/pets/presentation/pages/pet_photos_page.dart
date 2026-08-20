@@ -54,6 +54,9 @@ class PetPhotosPage extends ConsumerWidget {
                 itemCount: items.length,
                 itemBuilder: (_, index) => _PhotoTile(
                   photo: items[index],
+                  onSetMain: items[index].isMain
+                      ? null
+                      : () => _setMain(context, ref, items[index]),
                   onDelete: () => _delete(context, ref, items[index]),
                 ),
               ),
@@ -161,11 +164,32 @@ class PetPhotosPage extends ConsumerWidget {
       AppSnackBar.showError(context, result.failureOrNull!.message);
     }
   }
+
+  Future<void> _setMain(
+    BuildContext context,
+    WidgetRef ref,
+    PetPhoto photo,
+  ) async {
+    final result = await ref
+        .read(petPhotoControllerProvider.notifier)
+        .setMain(petId, photo.photoId);
+    if (!context.mounted) return;
+    if (result.isFailure) {
+      AppSnackBar.showError(context, result.failureOrNull!.message);
+    } else {
+      AppSnackBar.showSuccess(context, 'Foto principal actualizada.');
+    }
+  }
 }
 
 class _PhotoTile extends StatelessWidget {
-  const _PhotoTile({required this.photo, required this.onDelete});
+  const _PhotoTile({
+    required this.photo,
+    required this.onSetMain,
+    required this.onDelete,
+  });
   final PetPhoto photo;
+  final VoidCallback? onSetMain;
   final VoidCallback onDelete;
 
   @override
@@ -183,6 +207,19 @@ class _PhotoTile extends StatelessWidget {
             left: AppSpacing.sm,
             bottom: AppSpacing.sm,
             child: Chip(label: Text('Principal')),
+          ),
+        if (onSetMain != null)
+          Positioned(
+            left: AppSpacing.xs,
+            top: AppSpacing.xs,
+            child: IconButton.filled(
+              tooltip: 'Usar como principal',
+              style: IconButton.styleFrom(
+                backgroundColor: AppColors.textPrimary.withValues(alpha: 0.7),
+              ),
+              onPressed: onSetMain,
+              icon: const Icon(Icons.star_outline, color: Colors.white),
+            ),
           ),
         Positioned(
           right: AppSpacing.xs,
