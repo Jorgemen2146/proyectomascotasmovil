@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/services/session_events.dart';
 import '../../../core/errors/app_failure.dart';
+import '../domain/entities/user.dart';
 import 'auth_state.dart';
 import 'providers.dart';
 
@@ -96,6 +97,10 @@ class AuthStateController extends Notifier<AuthState> {
   Future<void> logout() async {
     await ref.read(logoutUseCaseProvider).call();
     state = const AuthState(status: AuthStatus.unauthenticated);
+  }
+
+  void replaceUser(User user) {
+    state = AuthState(status: AuthStatus.authenticated, user: user);
   }
 }
 

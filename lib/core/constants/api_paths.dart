@@ -12,4 +12,17 @@ class ApiPaths {
   static const String refresh = '/api/v1/auth/refresh';
   static const String logout = '/api/v1/auth/logout';
   static const String me = '/api/v1/auth/me';
+
+  static const String pets = '/api/v1/pets';
+  static const String myPets = '/api/v1/pets/mine';
+  static const String species = '/api/v1/species';
+
+  static String pet(String petId) => '$pets/$petId';
+  static String breeds(int speciesId) => '$species/$speciesId/breeds';
+  static String petPhotos(String petId) => '${pet(petId)}/photos';
+  static String photoUploadUrl(String petId) =>
+      '${petPhotos(petId)}/upload-url';
+  static String confirmPhoto(String petId) => '${petPhotos(petId)}/confirm';
+  static String petPhoto(String petId, String photoId) =>
+      '${petPhotos(petId)}/$photoId';
 }

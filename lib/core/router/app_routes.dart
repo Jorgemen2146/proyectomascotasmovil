@@ -9,9 +9,15 @@ class AppRoutes {
   static const String verifyEmail = '/verify-email';
   static const String home = '/home';
 
-  // Placeholder-only routes for upcoming features (screens not yet built).
   static const String pets = '/pets';
+  static const String newPet = '/pets/new';
+  static String petDetails(String petId) => '/pets/$petId';
+  static String editPet(String petId) => '/pets/$petId/edit';
+  static String petPhotos(String petId) => '/pets/$petId/photos';
   static const String profile = '/profile';
+  static const String editProfile = '/profile/edit';
+
+  // Placeholder-only routes for upcoming features.
   static const String genealogy = '/genealogy';
   static const String matching = '/matching';
   static const String health = '/health';

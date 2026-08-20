@@ -8,13 +8,17 @@ import '../../features/authentication/presentation/pages/register_page.dart';
 import '../../features/authentication/presentation/pages/splash_page.dart';
 import '../../features/authentication/presentation/pages/verify_email_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
+import '../../features/pets/presentation/pages/pet_detail_page.dart';
+import '../../features/pets/presentation/pages/pet_form_page.dart';
+import '../../features/pets/presentation/pages/pet_photos_page.dart';
+import '../../features/pets/presentation/pages/pets_page.dart';
+import '../../features/profile/presentation/pages/edit_profile_page.dart';
+import '../../features/profile/presentation/pages/profile_page.dart';
 import '../widgets/placeholder_page.dart';
 import 'app_routes.dart';
 import 'go_router_refresh_notifier.dart';
 
-/// Application-wide GoRouter configuration. Only Splash/Login/Register/Home
-/// are fully implemented; Pets/Profile/Genealogy/Matching/Health are wired
-/// as placeholder routes ready for their features to be built out.
+/// Application-wide GoRouter configuration and authentication redirects.
 final appRouterProvider = Provider<GoRouter>((ref) {
   final refreshNotifier = ref.watch(goRouterRefreshNotifierProvider);
 
@@ -50,11 +54,40 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.pets,
-        builder: (context, state) => const PlaceholderPage(title: 'Pets'),
+        builder: (context, state) => const PetsPage(),
+        routes: [
+          GoRoute(
+            path: 'new',
+            builder: (context, state) => const PetFormPage(),
+          ),
+          GoRoute(
+            path: ':petId',
+            builder: (context, state) =>
+                PetDetailPage(petId: state.pathParameters['petId']!),
+            routes: [
+              GoRoute(
+                path: 'edit',
+                builder: (context, state) =>
+                    PetFormPage(petId: state.pathParameters['petId']!),
+              ),
+              GoRoute(
+                path: 'photos',
+                builder: (context, state) =>
+                    PetPhotosPage(petId: state.pathParameters['petId']!),
+              ),
+            ],
+          ),
+        ],
       ),
       GoRoute(
         path: AppRoutes.profile,
-        builder: (context, state) => const PlaceholderPage(title: 'Profile'),
+        builder: (context, state) => const ProfilePage(),
+        routes: [
+          GoRoute(
+            path: 'edit',
+            builder: (context, state) => const EditProfilePage(),
+          ),
+        ],
       ),
       GoRoute(
         path: AppRoutes.genealogy,

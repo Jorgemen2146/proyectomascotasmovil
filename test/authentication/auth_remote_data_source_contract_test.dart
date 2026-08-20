@@ -102,6 +102,26 @@ void main() {
     expect(user.toDomain().fullName, 'Jorge Test');
     expect(rawDio.lastRequest, isNull);
   });
+
+  test('Editar perfil usa PUT /me sin enviar email', () async {
+    await dataSource.updateProfile(
+      firstName: 'Jorge',
+      lastName: 'Gonzales',
+      phoneNumber: '+51 987654321',
+    );
+
+    expect(authenticatedDio.lastRequest?.method, 'PUT');
+    expect(authenticatedDio.lastRequest?.path, ApiPaths.me);
+    expect(authenticatedDio.lastRequest?.data, {
+      'firstName': 'Jorge',
+      'lastName': 'Gonzales',
+      'phoneNumber': '+51 987654321',
+    });
+    expect(
+      (authenticatedDio.lastRequest?.data as Map).containsKey('email'),
+      isFalse,
+    );
+  });
 }
 
 class _RecordingDio {

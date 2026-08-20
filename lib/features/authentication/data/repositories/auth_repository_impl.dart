@@ -101,6 +101,29 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Result<User>> updateProfile({
+    required String firstName,
+    required String lastName,
+    String? phoneNumber,
+  }) async {
+    try {
+      await _remoteDataSource.updateProfile(
+        firstName: firstName,
+        lastName: lastName,
+        phoneNumber: phoneNumber,
+      );
+      final dto = await _remoteDataSource.getCurrentUser();
+      return Result.success(dto.toDomain());
+    } on DioException catch (e) {
+      return Result.failure(
+        mapExceptionToFailure(mapDioExceptionToAppException(e)),
+      );
+    } catch (_) {
+      return const Result.failure(UnknownFailure());
+    }
+  }
+
+  @override
   Future<bool> hasActiveSession() => _tokenStorage.hasValidSession();
 
   Future<Result<User>> _runAuthCall(

@@ -17,11 +17,16 @@ class UserDto with _$UserDto {
     required String email,
     required String firstName,
     required String lastName,
+    String? phoneNumber,
   }) = _UserDto;
 
   factory UserDto.fromJson(Map<String, dynamic> json) =>
       _$UserDtoFromJson(json);
 
-  User toDomain() =>
-      User(id: userId, email: email, fullName: '$firstName $lastName'.trim());
+  User toDomain() => User(
+    id: userId,
+    email: email,
+    fullName: '$firstName $lastName'.trim(),
+    phoneNumber: phoneNumber,
+  );
 }

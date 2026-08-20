@@ -51,6 +51,9 @@ dependencies:
   # Secure storage (tokens only, never passwords)
   flutter_secure_storage: ^9.2.4
 
+  # Camera/gallery access for pet photos.
+  image_picker: ^1.1.2
+
   # Design system
   google_fonts: ^6.2.1
 

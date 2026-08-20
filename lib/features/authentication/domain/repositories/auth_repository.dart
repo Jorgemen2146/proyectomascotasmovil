@@ -26,6 +26,12 @@ abstract class AuthRepository {
 
   Future<Result<User>> getCurrentUser();
 
+  Future<Result<User>> updateProfile({
+    required String firstName,
+    required String lastName,
+    String? phoneNumber,
+  });
+
   /// Whether a refresh token is currently persisted (does not guarantee
   /// it is still valid server-side).
   Future<bool> hasActiveSession();

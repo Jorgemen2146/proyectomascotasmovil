@@ -74,5 +74,21 @@ class FakeAuthRepository implements AuthRepository {
   Future<Result<User>> getCurrentUser() async => currentUserResult;
 
   @override
+  Future<Result<User>> updateProfile({
+    required String firstName,
+    required String lastName,
+    String? phoneNumber,
+  }) async {
+    final user = User(
+      id: '1',
+      email: 'dog@example.com',
+      fullName: '$firstName $lastName',
+      phoneNumber: phoneNumber,
+    );
+    currentUserResult = Result.success(user);
+    return Result.success(user);
+  }
+
+  @override
   Future<bool> hasActiveSession() async => activeSession;
 }

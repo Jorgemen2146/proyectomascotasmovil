@@ -101,10 +101,7 @@ class HomePage extends ConsumerWidget {
                   title: 'Mis Mascotas',
                   trailing: IconButton(
                     icon: const Icon(AppIcons.addCircle),
-                    onPressed: () => AppSnackBar.showInfo(
-                      context,
-                      'Próximamente disponible.',
-                    ),
+                    onPressed: () => context.push(AppRoutes.newPet),
                   ),
                 ),
               ),

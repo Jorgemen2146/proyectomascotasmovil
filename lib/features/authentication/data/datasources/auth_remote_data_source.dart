@@ -81,4 +81,19 @@ class AuthRemoteDataSource {
     );
     return UserDto.fromJson(response.data!);
   }
+
+  Future<void> updateProfile({
+    required String firstName,
+    required String lastName,
+    String? phoneNumber,
+  }) async {
+    await _authenticatedDio.put<void>(
+      ApiPaths.me,
+      data: {
+        'firstName': firstName,
+        'lastName': lastName,
+        'phoneNumber': phoneNumber,
+      },
+    );
+  }
 }
