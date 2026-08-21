@@ -13,6 +13,7 @@ _$UserDtoImpl _$$UserDtoImplFromJson(Map<String, dynamic> json) =>
       firstName: json['firstName'] as String,
       lastName: json['lastName'] as String,
       phoneNumber: json['phoneNumber'] as String?,
+      profilePhotoUrl: json['profilePhotoUrl'] as String?,
     );
 
 Map<String, dynamic> _$$UserDtoImplToJson(_$UserDtoImpl instance) =>
@@ -22,4 +23,5 @@ Map<String, dynamic> _$$UserDtoImplToJson(_$UserDtoImpl instance) =>
       'firstName': instance.firstName,
       'lastName': instance.lastName,
       'phoneNumber': instance.phoneNumber,
+      'profilePhotoUrl': instance.profilePhotoUrl,
     };

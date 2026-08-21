@@ -26,6 +26,7 @@ mixin _$UserDto {
   String get firstName => throw _privateConstructorUsedError;
   String get lastName => throw _privateConstructorUsedError;
   String? get phoneNumber => throw _privateConstructorUsedError;
+  String? get profilePhotoUrl => throw _privateConstructorUsedError;
 
   /// Serializes this UserDto to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -47,6 +48,7 @@ abstract class $UserDtoCopyWith<$Res> {
     String firstName,
     String lastName,
     String? phoneNumber,
+    String? profilePhotoUrl,
   });
 }
 
@@ -70,6 +72,7 @@ class _$UserDtoCopyWithImpl<$Res, $Val extends UserDto>
     Object? firstName = null,
     Object? lastName = null,
     Object? phoneNumber = freezed,
+    Object? profilePhotoUrl = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -93,6 +96,10 @@ class _$UserDtoCopyWithImpl<$Res, $Val extends UserDto>
                 ? _value.phoneNumber
                 : phoneNumber // ignore: cast_nullable_to_non_nullable
                       as String?,
+            profilePhotoUrl: freezed == profilePhotoUrl
+                ? _value.profilePhotoUrl
+                : profilePhotoUrl // ignore: cast_nullable_to_non_nullable
+                      as String?,
           )
           as $Val,
     );
@@ -113,6 +120,7 @@ abstract class _$$UserDtoImplCopyWith<$Res> implements $UserDtoCopyWith<$Res> {
     String firstName,
     String lastName,
     String? phoneNumber,
+    String? profilePhotoUrl,
   });
 }
 
@@ -135,6 +143,7 @@ class __$$UserDtoImplCopyWithImpl<$Res>
     Object? firstName = null,
     Object? lastName = null,
     Object? phoneNumber = freezed,
+    Object? profilePhotoUrl = freezed,
   }) {
     return _then(
       _$UserDtoImpl(
@@ -158,6 +167,10 @@ class __$$UserDtoImplCopyWithImpl<$Res>
             ? _value.phoneNumber
             : phoneNumber // ignore: cast_nullable_to_non_nullable
                   as String?,
+        profilePhotoUrl: freezed == profilePhotoUrl
+            ? _value.profilePhotoUrl
+            : profilePhotoUrl // ignore: cast_nullable_to_non_nullable
+                  as String?,
       ),
     );
   }
@@ -172,6 +185,7 @@ class _$UserDtoImpl extends _UserDto {
     required this.firstName,
     required this.lastName,
     this.phoneNumber,
+    this.profilePhotoUrl,
   }) : super._();
 
   factory _$UserDtoImpl.fromJson(Map<String, dynamic> json) =>
@@ -187,10 +201,12 @@ class _$UserDtoImpl extends _UserDto {
   final String lastName;
   @override
   final String? phoneNumber;
+  @override
+  final String? profilePhotoUrl;
 
   @override
   String toString() {
-    return 'UserDto(userId: $userId, email: $email, firstName: $firstName, lastName: $lastName, phoneNumber: $phoneNumber)';
+    return 'UserDto(userId: $userId, email: $email, firstName: $firstName, lastName: $lastName, phoneNumber: $phoneNumber, profilePhotoUrl: $profilePhotoUrl)';
   }
 
   @override
@@ -205,13 +221,22 @@ class _$UserDtoImpl extends _UserDto {
             (identical(other.lastName, lastName) ||
                 other.lastName == lastName) &&
             (identical(other.phoneNumber, phoneNumber) ||
-                other.phoneNumber == phoneNumber));
+                other.phoneNumber == phoneNumber) &&
+            (identical(other.profilePhotoUrl, profilePhotoUrl) ||
+                other.profilePhotoUrl == profilePhotoUrl));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, userId, email, firstName, lastName, phoneNumber);
+  int get hashCode => Object.hash(
+    runtimeType,
+    userId,
+    email,
+    firstName,
+    lastName,
+    phoneNumber,
+    profilePhotoUrl,
+  );
 
   /// Create a copy of UserDto
   /// with the given fields replaced by the non-null parameter values.
@@ -234,6 +259,7 @@ abstract class _UserDto extends UserDto {
     required final String firstName,
     required final String lastName,
     final String? phoneNumber,
+    final String? profilePhotoUrl,
   }) = _$UserDtoImpl;
   const _UserDto._() : super._();
 
@@ -249,6 +275,8 @@ abstract class _UserDto extends UserDto {
   String get lastName;
   @override
   String? get phoneNumber;
+  @override
+  String? get profilePhotoUrl;
 
   /// Create a copy of UserDto
   /// with the given fields replaced by the non-null parameter values.

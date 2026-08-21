@@ -1,11 +1,17 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/errors/app_failure.dart';
+import '../../../../core/services/photo_picker_service.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_loading_indicator.dart';
 import '../../../../core/widgets/app_snackbar.dart';
+import '../../../../core/widgets/app_network_image.dart';
 import '../../../../core/widgets/error_state.dart';
 import '../../application/profile_controller.dart';
 
@@ -22,6 +28,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
+  SelectedPhoto? _selectedPhoto;
   bool _initialized = false;
 
   @override
@@ -60,9 +67,10 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             child: ListView(
               padding: const EdgeInsets.all(AppSpacing.lg),
               children: [
-                const CircleAvatar(
-                  radius: 44,
-                  child: Icon(Icons.person, size: 48),
+                _EditableProfileAvatar(
+                  selectedPhoto: _selectedPhoto,
+                  currentPhotoUrl: user.profilePhotoUrl,
+                  onTap: _showPhotoSource,
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 TextFormField(
@@ -104,26 +112,136 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     );
   }
 
+  Future<void> _showPhotoSource() async {
+    final source = await showModalBottomSheet<PhotoSource>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Tomar foto'),
+              onTap: () => Navigator.pop(context, PhotoSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Elegir de galería'),
+              onTap: () => Navigator.pop(context, PhotoSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+    final result = await ref.read(profilePhotoPickerProvider).pick(source);
+    if (!mounted) return;
+    switch (result) {
+      case PhotoSelected(:final photo):
+        setState(() => _selectedPhoto = photo);
+      case PhotoSelectionInvalid(:final message):
+        AppSnackBar.showError(context, message);
+      case PhotoSelectionCancelled():
+        break;
+    }
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    final success = await ref
+    final outcome = await ref
         .read(profileControllerProvider.notifier)
         .updateProfile(
           firstName: _firstNameController.text.trim(),
           lastName: _lastNameController.text.trim(),
           phoneNumber: _nullable(_phoneController.text),
+          photo: _selectedPhoto,
         );
     if (!mounted) return;
-    if (success) {
-      AppSnackBar.showSuccess(context, 'Perfil actualizado correctamente.');
-      context.pop();
-    } else {
+    if (outcome == null || outcome.refreshFailure != null) {
       final error = ref.read(profileControllerProvider).error;
       AppSnackBar.showError(
         context,
         error?.toString() ?? 'No se pudo guardar.',
       );
+      return;
     }
+
+    final photoFailure = outcome.photoFailure;
+    if (photoFailure != null) {
+      final errorId = photoFailure is ServerFailure
+          ? photoFailure.errorCode
+          : null;
+      AppSnackBar.showError(
+        context,
+        errorId == null || errorId.isEmpty
+            ? 'Tu perfil fue actualizado, pero no se pudo guardar la foto.'
+            : 'No se pudo guardar la foto. Código: $errorId',
+      );
+    } else {
+      AppSnackBar.showSuccess(context, 'Perfil actualizado correctamente.');
+    }
+    context.pop();
+  }
+}
+
+class _EditableProfileAvatar extends StatelessWidget {
+  const _EditableProfileAvatar({
+    required this.selectedPhoto,
+    required this.currentPhotoUrl,
+    required this.onTap,
+  });
+
+  final SelectedPhoto? selectedPhoto;
+  final String? currentPhotoUrl;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: InkWell(
+        key: const Key('profilePhotoSelector'),
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            ClipOval(
+              child: SizedBox.square(
+                dimension: 88,
+                child: selectedPhoto != null
+                    ? Image.file(
+                        File(selectedPhoto!.file.path),
+                        fit: BoxFit.cover,
+                      )
+                    : currentPhotoUrl != null
+                    ? AppNetworkImage(url: currentPhotoUrl, fit: BoxFit.cover)
+                    : const ColoredBox(
+                        color: Color(0xFFDBEAFE),
+                        child: Icon(
+                          Icons.person,
+                          size: 48,
+                          color: AppColors.primary,
+                        ),
+                      ),
+              ),
+            ),
+            Positioned(
+              right: -2,
+              bottom: -2,
+              child: DecoratedBox(
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: const Padding(
+                  padding: EdgeInsets.all(7),
+                  child: Icon(Icons.camera_alt, size: 17, color: Colors.white),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

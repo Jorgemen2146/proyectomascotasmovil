@@ -10,6 +10,7 @@ import '../../../../core/widgets/app_badge.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_dialog.dart';
 import '../../../../core/widgets/app_loading_indicator.dart';
+import '../../../../core/widgets/app_network_image.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/error_state.dart';
 import '../../../../core/widgets/main_bottom_navigation.dart';
@@ -33,11 +34,7 @@ class ProfilePage extends ConsumerWidget {
         data: (user) => ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
-            const CircleAvatar(
-              radius: 48,
-              backgroundColor: Color(0xFFDBEAFE),
-              child: Icon(Icons.person, size: 52, color: AppColors.primary),
-            ),
+            _ProfileAvatar(photoUrl: user.profilePhotoUrl),
             const SizedBox(height: AppSpacing.md),
             Text(
               user.fullName,
@@ -127,6 +124,31 @@ class ProfilePage extends ConsumerWidget {
     );
     if (!confirmed) return;
     await ref.read(authStateControllerProvider.notifier).logout();
+  }
+}
+
+class _ProfileAvatar extends StatelessWidget {
+  const _ProfileAvatar({required this.photoUrl});
+
+  final String? photoUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    if (photoUrl == null || photoUrl!.trim().isEmpty) {
+      return const CircleAvatar(
+        radius: 48,
+        backgroundColor: Color(0xFFDBEAFE),
+        child: Icon(Icons.person, size: 52, color: AppColors.primary),
+      );
+    }
+    return Center(
+      child: ClipOval(
+        child: SizedBox.square(
+          dimension: 96,
+          child: AppNetworkImage(url: photoUrl, fit: BoxFit.cover),
+        ),
+      ),
+    );
   }
 }
 

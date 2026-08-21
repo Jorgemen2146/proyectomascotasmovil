@@ -92,6 +92,7 @@ void main() {
       'email': 'jorge@test.com',
       'firstName': 'Jorge',
       'lastName': 'Test',
+      'profilePhotoUrl': '/api/v1/auth/me/photo/content',
     };
 
     final user = await dataSource.getCurrentUser();
@@ -100,6 +101,24 @@ void main() {
     expect(authenticatedDio.lastRequest?.path, ApiPaths.me);
     expect(user.userId, '11111111-1111-1111-1111-111111111111');
     expect(user.toDomain().fullName, 'Jorge Test');
+    expect(user.toDomain().profilePhotoUrl, '/api/v1/auth/me/photo/content');
+    expect(rawDio.lastRequest, isNull);
+  });
+
+  test('foto de perfil usa POST autenticado con Base64 puro', () async {
+    await dataSource.uploadProfilePhoto(
+      fileName: 'jorge.jpg',
+      contentType: 'image/jpeg',
+      imageBase64: 'AQIDBA==',
+    );
+
+    expect(authenticatedDio.lastRequest?.method, 'POST');
+    expect(authenticatedDio.lastRequest?.path, ApiPaths.mePhoto);
+    expect(authenticatedDio.lastRequest?.data, {
+      'fileName': 'jorge.jpg',
+      'contentType': 'image/jpeg',
+      'imageBase64': 'AQIDBA==',
+    });
     expect(rawDio.lastRequest, isNull);
   });
 

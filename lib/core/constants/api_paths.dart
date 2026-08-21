@@ -12,6 +12,7 @@ class ApiPaths {
   static const String refresh = '/api/v1/auth/refresh';
   static const String logout = '/api/v1/auth/logout';
   static const String me = '/api/v1/auth/me';
+  static const String mePhoto = '/api/v1/auth/me/photo';
 
   static const String pets = '/api/v1/pets';
   static const String myPets = '/api/v1/pets/mine';

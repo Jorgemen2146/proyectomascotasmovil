@@ -6,6 +6,7 @@ import '../../../../core/errors/app_failure.dart';
 import '../../../../core/errors/failure_mapper.dart';
 import '../../../../core/network/dio_exception_mapper.dart';
 import '../../../../core/result/result.dart';
+import '../../../../core/services/photo_picker_service.dart';
 import '../../../../core/storage/secure_token_storage.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -101,19 +102,30 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Result<User>> updateProfile({
+  Future<Result<void>> updateProfile({
     required String firstName,
     required String lastName,
     String? phoneNumber,
-  }) async {
+  }) => _runVoidCall(
+    () => _remoteDataSource.updateProfile(
+      firstName: firstName,
+      lastName: lastName,
+      phoneNumber: phoneNumber,
+    ),
+  );
+
+  @override
+  Future<Result<void>> uploadProfilePhoto(SelectedPhoto photo) async {
     try {
-      await _remoteDataSource.updateProfile(
-        firstName: firstName,
-        lastName: lastName,
-        phoneNumber: phoneNumber,
+      final prepared = await preparePhotoUpload(photo);
+      await _remoteDataSource.uploadProfilePhoto(
+        fileName: prepared.fileName,
+        contentType: prepared.contentType,
+        imageBase64: prepared.imageBase64,
       );
-      final dto = await _remoteDataSource.getCurrentUser();
-      return Result.success(dto.toDomain());
+      return const Result.success(null);
+    } on PhotoValidationException catch (error) {
+      return Result.failure(ValidationFailure(error.message));
     } on DioException catch (e) {
       return Result.failure(
         mapExceptionToFailure(mapDioExceptionToAppException(e)),

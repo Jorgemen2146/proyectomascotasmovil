@@ -96,4 +96,19 @@ class AuthRemoteDataSource {
       },
     );
   }
+
+  Future<void> uploadProfilePhoto({
+    required String fileName,
+    required String contentType,
+    required String imageBase64,
+  }) async {
+    await _authenticatedDio.post<void>(
+      ApiPaths.mePhoto,
+      data: {
+        'fileName': fileName,
+        'contentType': contentType,
+        'imageBase64': imageBase64,
+      },
+    );
+  }
 }

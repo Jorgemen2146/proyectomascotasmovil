@@ -1,4 +1,5 @@
 import '../../../../core/result/result.dart';
+import '../../../../core/services/photo_picker_service.dart';
 import '../entities/user.dart';
 
 /// Domain-facing contract for authentication operations. The data layer
@@ -26,11 +27,13 @@ abstract class AuthRepository {
 
   Future<Result<User>> getCurrentUser();
 
-  Future<Result<User>> updateProfile({
+  Future<Result<void>> updateProfile({
     required String firstName,
     required String lastName,
     String? phoneNumber,
   });
+
+  Future<Result<void>> uploadProfilePhoto(SelectedPhoto photo);
 
   /// Whether a refresh token is currently persisted (does not guarantee
   /// it is still valid server-side).

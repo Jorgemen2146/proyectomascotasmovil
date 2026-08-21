@@ -18,6 +18,7 @@ class UserDto with _$UserDto {
     required String firstName,
     required String lastName,
     String? phoneNumber,
+    String? profilePhotoUrl,
   }) = _UserDto;
 
   factory UserDto.fromJson(Map<String, dynamic> json) =>
@@ -28,5 +29,6 @@ class UserDto with _$UserDto {
     email: email,
     fullName: '$firstName $lastName'.trim(),
     phoneNumber: phoneNumber,
+    profilePhotoUrl: profilePhotoUrl,
   );
 }
