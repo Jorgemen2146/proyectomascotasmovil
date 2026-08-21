@@ -125,15 +125,21 @@ void main() {
       overrides: [petsRepositoryProvider.overrideWithValue(repository)],
     );
     addTearDown(container.dispose);
+    final subscription = container.listen(myPetsProvider, (_, _) {});
+    addTearDown(subscription.close);
+    await container.read(myPetsProvider.future);
+    repository.events.clear();
 
     final result = await container
         .read(petFormControllerProvider.notifier)
         .createWithOptionalPhoto(_draft, _photo);
+    await container.read(myPetsProvider.future);
 
     expect(result.valueOrNull?.petId, 'pet-created');
     expect(result.valueOrNull?.photoFailure, isNull);
     expect(repository.createCalls, 1);
     expect(repository.uploadCalls, 1);
+    expect(repository.events, ['createPet', 'uploadPhoto', 'getMyPets']);
   });
 
   test('si falla foto conserva mascota creada y expone el error', () async {
@@ -185,7 +191,7 @@ void main() {
         .read(petPhotoControllerProvider.notifier)
         .delete('pet-1', 'photo-1');
 
-    expect(uploaded.valueOrNull?.photoId, 'photo-created');
+    expect(uploaded.isSuccess, isTrue);
     expect(deleted.isSuccess, isTrue);
     expect(repository.uploadCalls, 1);
     expect(repository.deletePhotoCalls, 1);

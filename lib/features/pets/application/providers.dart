@@ -86,13 +86,12 @@ class PetFormController extends AutoDisposeNotifier<bool> {
     }
 
     final petId = created.valueOrNull!;
-    ref.invalidate(myPetsProvider);
     AppFailure? photoFailure;
     if (photo != null) {
       final uploaded = await repository.uploadPhoto(petId, photo);
       photoFailure = uploaded.failureOrNull;
-      if (uploaded.isSuccess) _invalidatePet(petId);
     }
+    ref.invalidate(myPetsProvider);
     state = false;
     return Result.success(
       PetSaveOutcome(petId: petId, photoFailure: photoFailure),
@@ -173,7 +172,7 @@ class PetPhotoController extends AutoDisposeNotifier<bool> {
   @override
   bool build() => false;
 
-  Future<Result<PetPhoto>> upload(String petId, SelectedPhoto photo) async {
+  Future<Result<void>> upload(String petId, SelectedPhoto photo) async {
     if (state) {
       return const Result.failure(UnknownFailure('Operación en curso.'));
     }

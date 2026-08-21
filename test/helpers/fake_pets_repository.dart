@@ -19,13 +19,17 @@ class FakePetsRepository implements PetsRepository {
   int setMainPhotoCalls = 0;
   int deletePhotoCalls = 0;
   AppFailure? uploadFailure;
+  final List<String> events = [];
   PetDraft? lastDraft;
 
   @override
   Future<Result<List<PetSummary>>> getMyPets({
     String? name,
     int? speciesId,
-  }) async => Result.success(pets);
+  }) async {
+    events.add('getMyPets');
+    return Result.success(pets);
+  }
 
   @override
   Future<Result<PetDetails>> getPet(String petId) async =>
@@ -40,6 +44,7 @@ class FakePetsRepository implements PetsRepository {
 
   @override
   Future<Result<String>> createPet(PetDraft draft) async {
+    events.add('createPet');
     createCalls++;
     lastDraft = draft;
     return Result.success(createdPetId);
@@ -63,21 +68,11 @@ class FakePetsRepository implements PetsRepository {
       Result.success(photos);
 
   @override
-  Future<Result<PetPhoto>> uploadPhoto(
-    String petId,
-    SelectedPhoto photo,
-  ) async {
+  Future<Result<void>> uploadPhoto(String petId, SelectedPhoto photo) async {
+    events.add('uploadPhoto');
     uploadCalls++;
     if (uploadFailure != null) return Result.failure(uploadFailure!);
-    return Result.success(
-      PetPhoto(
-        photoId: 'photo-created',
-        petId: petId,
-        url: '/api/v1/pets/$petId/photos/photo-created/content',
-        isMain: true,
-        createdAt: DateTime.utc(2026),
-      ),
-    );
+    return const Result.success(null);
   }
 
   @override

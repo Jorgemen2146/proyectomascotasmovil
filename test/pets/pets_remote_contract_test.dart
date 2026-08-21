@@ -81,15 +81,7 @@ void main() {
   });
 
   test('foto se convierte a Base64 y usa un único POST JSON', () async {
-    final gateway = _RecordingDio(
-      (request) => {
-        'photoId': 'photo-1',
-        'petId': 'pet-1',
-        'url': '/api/v1/pets/pet-1/photos/photo-1/content',
-        'isMain': true,
-        'createdAt': '2026-01-01T00:00:00Z',
-      },
-    );
+    final gateway = _RecordingDio((request) => null, statusCode: 201);
     final repository = PetsRepositoryImpl(
       PetsRemoteDataSource(dio: gateway.dio),
     );
@@ -103,7 +95,7 @@ void main() {
 
     final result = await repository.uploadPhoto('pet-1', photo);
 
-    expect(result.valueOrNull?.photoId, 'photo-1');
+    expect(result.isSuccess, isTrue);
     expect(gateway.requests, hasLength(1));
     expect(gateway.requests.single.method, 'POST');
     expect(gateway.requests.single.path, ApiPaths.petPhotos('pet-1'));
@@ -183,7 +175,7 @@ void main() {
 }
 
 class _RecordingDio {
-  _RecordingDio(this.responseFor) {
+  _RecordingDio(this.responseFor, {this.statusCode = 200}) {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (request, handler) {
@@ -191,7 +183,7 @@ class _RecordingDio {
           handler.resolve(
             Response<dynamic>(
               requestOptions: request,
-              statusCode: 200,
+              statusCode: statusCode,
               data: responseFor(request),
             ),
           );
@@ -201,6 +193,7 @@ class _RecordingDio {
   }
 
   final dynamic Function(RequestOptions request) responseFor;
+  final int statusCode;
   final Dio dio = Dio();
   final List<RequestOptions> requests = [];
 }

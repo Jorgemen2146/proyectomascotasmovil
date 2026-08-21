@@ -74,13 +74,13 @@ class PetsRemoteDataSource {
         .toList(growable: false);
   }
 
-  Future<PetPhotoDto> uploadPhotoBase64(
+  Future<void> uploadPhotoBase64(
     String petId,
     String fileName,
     String contentType,
     String imageBase64,
   ) async {
-    final response = await _dio.post<Map<String, dynamic>>(
+    await _dio.post<void>(
       ApiPaths.petPhotos(petId),
       data: {
         'fileName': fileName,
@@ -88,7 +88,6 @@ class PetsRemoteDataSource {
         'imageBase64': imageBase64,
       },
     );
-    return PetPhotoDto.fromJson(response.data!);
   }
 
   Future<void> deletePhoto(String petId, String photoId) async {

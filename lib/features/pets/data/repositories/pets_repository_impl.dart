@@ -59,19 +59,16 @@ class PetsRepositoryImpl implements PetsRepository {
   });
 
   @override
-  Future<Result<PetPhoto>> uploadPhoto(
-    String petId,
-    SelectedPhoto photo,
-  ) async {
+  Future<Result<void>> uploadPhoto(String petId, SelectedPhoto photo) async {
     try {
       final prepared = await preparePhotoUpload(photo);
-      final uploaded = await _remoteDataSource.uploadPhotoBase64(
+      await _remoteDataSource.uploadPhotoBase64(
         petId,
         prepared.fileName,
         prepared.contentType,
         prepared.imageBase64,
       );
-      return Result.success(uploaded.toDomain());
+      return const Result.success(null);
     } on PhotoValidationException catch (error) {
       return Result.failure(ValidationFailure(error.message));
     } on DioException catch (error) {
