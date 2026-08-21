@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/services/session_events.dart';
@@ -25,19 +26,41 @@ class AuthStateController extends Notifier<AuthState> {
   }
 
   Future<void> _restoreSession() async {
-    final repository = ref.read(authRepositoryProvider);
-    final hasSession = await repository.hasActiveSession();
-    if (!hasSession) {
-      state = const AuthState(status: AuthStatus.unauthenticated);
-      return;
-    }
+    _debugBootstrap('started');
+    try {
+      final repository = ref.read(authRepositoryProvider);
+      final hasSession = await repository.hasActiveSession();
+      if (!hasSession) {
+        state = const AuthState(status: AuthStatus.unauthenticated);
+        return;
+      }
 
-    final result = await ref.read(getCurrentUserUseCaseProvider).call();
-    state = result.when(
-      success: (user) =>
-          AuthState(status: AuthStatus.authenticated, user: user),
-      failure: (_) => const AuthState(status: AuthStatus.unauthenticated),
-    );
+      _debugBootstrap('token exists');
+      _debugBootstrap('calling /auth/me');
+      final result = await ref.read(getCurrentUserUseCaseProvider).call();
+      state = result.when(
+        success: (user) {
+          _debugBootstrap('/auth/me success');
+          return AuthState(status: AuthStatus.authenticated, user: user);
+        },
+        failure: (failure) {
+          _debugBootstrap('/auth/me failed: ${failure.runtimeType}');
+          return const AuthState(status: AuthStatus.unauthenticated);
+        },
+      );
+    } catch (error) {
+      _debugBootstrap('/auth/me failed: ${error.runtimeType}');
+      state = const AuthState(status: AuthStatus.unauthenticated);
+    } finally {
+      if (state.status == AuthStatus.unknown) {
+        state = const AuthState(status: AuthStatus.unauthenticated);
+      }
+      _debugBootstrap('final state: ${state.status.name}');
+    }
+  }
+
+  void _debugBootstrap(String message) {
+    if (kDebugMode) debugPrint('[AUTH_BOOTSTRAP] $message');
   }
 
   Future<LoginOutcome> login({

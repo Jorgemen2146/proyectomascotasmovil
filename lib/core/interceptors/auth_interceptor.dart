@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../storage/secure_token_storage.dart';
 
@@ -73,7 +74,15 @@ class AuthInterceptor extends Interceptor {
       return;
     }
 
+    if (kDebugMode) {
+      debugPrint('[AUTH_BOOTSTRAP] attempting refresh');
+    }
     final refreshed = await _refreshSession();
+    if (kDebugMode) {
+      debugPrint(
+        '[AUTH_BOOTSTRAP] refresh ${refreshed ? 'success' : 'failed'}',
+      );
+    }
     if (!refreshed) {
       onSessionExpired();
       handler.next(err);
