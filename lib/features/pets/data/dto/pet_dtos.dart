@@ -156,7 +156,7 @@ class PetPhotoDto {
     photoId: json['photoId'] as String,
     petId: json['petId'] as String,
     url: json['url'] as String,
-    isMain: json['isMain'] as bool,
+    isMain: json['isPrimary'] as bool,
     createdAt: DateTime.parse(json['createdAt'] as String),
   );
   final String photoId;

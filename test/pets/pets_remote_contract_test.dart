@@ -151,7 +151,7 @@ void main() {
             'photoId': 'photo-1',
             'petId': 'pet-1',
             'url': '/photos/luna.jpg',
-            'isMain': true,
+            'isPrimary': true,
             'createdAt': '2026-01-01T00:00:00Z',
           },
         ];
@@ -165,6 +165,7 @@ void main() {
     await source.deletePhoto('pet-1', 'photo-1');
 
     expect(photos.single.photoId, 'photo-1');
+    expect(photos.single.isMain, isTrue);
     expect(gateway.requests[0].path, '/api/v1/pets/pet-1/photos');
     expect(gateway.requests[1].method, 'PUT');
     expect(gateway.requests[1].path, '/api/v1/pets/pet-1/photos/photo-1/main');

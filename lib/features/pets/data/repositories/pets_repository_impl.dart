@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../../core/errors/app_failure.dart';
 import '../../../../core/errors/failure_mapper.dart';
 import '../../../../core/network/dio_exception_mapper.dart';
+import '../../../../core/network/gateway_url_resolver.dart';
 import '../../../../core/result/result.dart';
 import '../../../../core/services/photo_picker_service.dart';
 import '../../domain/entities/pet.dart';
@@ -54,8 +56,36 @@ class PetsRepositoryImpl implements PetsRepository {
 
   @override
   Future<Result<List<PetPhoto>>> getPhotos(String petId) => _run(() async {
-    final items = await _remoteDataSource.getPhotos(petId);
-    return items.map((item) => item.toDomain()).toList(growable: false);
+    try {
+      final items = await _remoteDataSource.getPhotos(petId);
+      final photos = items
+          .map((item) => item.toDomain())
+          .toList(growable: false);
+      if (kDebugMode) {
+        debugPrint('[PET_PHOTOS] response parsed');
+        for (final photo in photos) {
+          debugPrint('[PET_PHOTOS] photoId=${photo.photoId}');
+          debugPrint('[PET_PHOTOS] rawUrl=${photo.url}');
+          debugPrint(
+            '[PET_PHOTOS] resolvedUrl=${GatewayUrlResolver.resolve(photo.url)}',
+          );
+        }
+        debugPrint('[PET_PHOTOS] building gallery');
+      }
+      return photos;
+    } catch (exception, stackTrace) {
+      if (kDebugMode) {
+        debugPrint(
+          '[PET_PHOTOS] exception runtimeType=${exception.runtimeType}',
+        );
+        debugPrint('[PET_PHOTOS] exception message=$exception');
+        debugPrintStack(
+          label: '[PET_PHOTOS] stackTrace',
+          stackTrace: stackTrace,
+        );
+      }
+      rethrow;
+    }
   });
 
   @override
