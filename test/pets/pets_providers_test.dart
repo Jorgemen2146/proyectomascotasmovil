@@ -1,8 +1,12 @@
+import 'dart:typed_data';
+
+import 'package:dogplatform/core/errors/app_failure.dart';
 import 'package:dogplatform/core/services/photo_picker_service.dart';
 import 'package:dogplatform/features/pets/application/providers.dart';
 import 'package:dogplatform/features/pets/domain/entities/pet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../helpers/fake_pets_repository.dart';
 
@@ -56,7 +60,7 @@ void main() {
     expect(repository.updateCalls, 1);
   });
 
-  test('selector valida formato y máximo de 5 MB', () {
+  test('selector acepta una imagen válida y limita a 10 MB', () {
     expect(ImagePickerPhotoPickerService.validatePhoto('dog.jpg', 100), isNull);
     expect(
       ImagePickerPhotoPickerService.validatePhoto('dog.webp', 100),
@@ -71,8 +75,85 @@ void main() {
         'dog.png',
         ImagePickerPhotoPickerService.maxBytes + 1,
       ),
-      contains('5 MB'),
+      'La imagen es demasiado grande. El tamaño máximo permitido es 10 MB.',
     );
+  });
+
+  test('rechaza bytes mayores a 10 MB antes de generar Base64', () async {
+    final oversizedBytes = Uint8List(
+      ImagePickerPhotoPickerService.maxBytes + 1,
+    );
+    final photo = SelectedPhoto(
+      file: XFile.fromData(oversizedBytes, name: 'grande.jpg'),
+      fileName: 'grande.jpg',
+      contentType: 'image/jpeg',
+      fileSize: oversizedBytes.length,
+    );
+
+    await expectLater(
+      preparePhotoUpload(photo),
+      throwsA(
+        isA<PhotoValidationException>().having(
+          (error) => error.message,
+          'message',
+          'La imagen es demasiado grande. '
+              'El tamaño máximo permitido es 10 MB.',
+        ),
+      ),
+    );
+  });
+
+  test('preparación genera Base64 puro y MIME desde la extensión', () async {
+    final bytes = Uint8List.fromList([1, 2, 3, 4]);
+    final prepared = await preparePhotoUpload(
+      SelectedPhoto(
+        file: XFile.fromData(bytes, name: 'dog.jpeg'),
+        fileName: 'dog.jpeg',
+        contentType: 'application/octet-stream',
+        fileSize: bytes.length,
+      ),
+    );
+
+    expect(prepared.imageBase64, 'AQIDBA==');
+    expect(prepared.imageBase64, isNot(startsWith('data:')));
+    expect(prepared.contentType, 'image/jpeg');
+  });
+
+  test('crear mascota y foto completa ambas operaciones', () async {
+    final repository = FakePetsRepository();
+    final container = ProviderContainer(
+      overrides: [petsRepositoryProvider.overrideWithValue(repository)],
+    );
+    addTearDown(container.dispose);
+
+    final result = await container
+        .read(petFormControllerProvider.notifier)
+        .createWithOptionalPhoto(_draft, _photo);
+
+    expect(result.valueOrNull?.petId, 'pet-created');
+    expect(result.valueOrNull?.photoFailure, isNull);
+    expect(repository.createCalls, 1);
+    expect(repository.uploadCalls, 1);
+  });
+
+  test('si falla foto conserva mascota creada y expone el error', () async {
+    final repository = FakePetsRepository()
+      ..uploadFailure = const ServerFailure('photo failed', statusCode: 500);
+    final container = ProviderContainer(
+      overrides: [petsRepositoryProvider.overrideWithValue(repository)],
+    );
+    addTearDown(container.dispose);
+
+    final result = await container
+        .read(petFormControllerProvider.notifier)
+        .createWithOptionalPhoto(_draft, _photo);
+
+    expect(result.isSuccess, isTrue);
+    expect(result.valueOrNull?.petId, 'pet-created');
+    expect(result.valueOrNull?.photoFailure?.message, 'photo failed');
+    expect(repository.createCalls, 1);
+    expect(repository.uploadCalls, 1);
+    expect(repository.deleteCalls, 0);
   });
 
   test('controller establece foto principal', () async {
@@ -89,4 +170,44 @@ void main() {
     expect(result.isSuccess, isTrue);
     expect(repository.setMainPhotoCalls, 1);
   });
+
+  test('galería sube y elimina foto mediante su controller', () async {
+    final repository = FakePetsRepository();
+    final container = ProviderContainer(
+      overrides: [petsRepositoryProvider.overrideWithValue(repository)],
+    );
+    addTearDown(container.dispose);
+
+    final uploaded = await container
+        .read(petPhotoControllerProvider.notifier)
+        .upload('pet-1', _photo);
+    final deleted = await container
+        .read(petPhotoControllerProvider.notifier)
+        .delete('pet-1', 'photo-1');
+
+    expect(uploaded.valueOrNull?.photoId, 'photo-created');
+    expect(deleted.isSuccess, isTrue);
+    expect(repository.uploadCalls, 1);
+    expect(repository.deletePhotoCalls, 1);
+  });
 }
+
+final _draft = PetDraft(
+  breedId: 10,
+  name: 'Luna',
+  birthDate: DateTime.utc(2022),
+  gender: 'F',
+  weight: 25,
+  color: 'Dorado',
+  pedigreeNumber: null,
+  isSterilized: true,
+  description: null,
+);
+
+final _photoBytes = Uint8List.fromList([1, 2, 3]);
+final _photo = SelectedPhoto(
+  file: XFile.fromData(_photoBytes, name: 'luna.jpg'),
+  fileName: 'luna.jpg',
+  contentType: 'image/jpeg',
+  fileSize: _photoBytes.length,
+);

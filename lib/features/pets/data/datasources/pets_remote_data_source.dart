@@ -1,21 +1,15 @@
-// ignore_for_file: prefer_initializing_formals, use_null_aware_elements
-
-import 'dart:typed_data';
-
 import 'package:dio/dio.dart';
 
 import '../../../../core/constants/api_paths.dart';
-import '../../../../core/network/gateway_url_resolver.dart';
 import '../../domain/entities/pet.dart';
 import '../dto/pet_dtos.dart';
 
 class PetsRemoteDataSource {
-  PetsRemoteDataSource({required Dio dio, Dio? uploadDio})
-    : _dio = dio,
-      _uploadDio = uploadDio ?? Dio();
+  PetsRemoteDataSource({required Dio dio}) : this._internal(dio);
+
+  PetsRemoteDataSource._internal(this._dio);
 
   final Dio _dio;
-  final Dio _uploadDio;
 
   Future<List<PetSummaryDto>> getMyPets({String? name, int? speciesId}) async {
     final response = await _dio.get<Map<String, dynamic>>(
@@ -26,7 +20,7 @@ class PetsRemoteDataSource {
         'sortBy': 'CreatedAt',
         'sortDirection': 'DESC',
         if (name != null && name.trim().isNotEmpty) 'name': name.trim(),
-        if (speciesId != null) 'speciesId': speciesId,
+        'speciesId': ?speciesId,
       },
     );
     final items = (response.data?['items'] as List<dynamic>? ?? const []);
@@ -80,49 +74,21 @@ class PetsRemoteDataSource {
         .toList(growable: false);
   }
 
-  Future<PhotoUploadTicketDto> createPhotoUploadUrl({
-    required String petId,
-    required String fileName,
-    required String contentType,
-    required int fileSize,
-  }) async {
+  Future<PetPhotoDto> uploadPhotoBase64(
+    String petId,
+    String fileName,
+    String contentType,
+    String imageBase64,
+  ) async {
     final response = await _dio.post<Map<String, dynamic>>(
-      ApiPaths.photoUploadUrl(petId),
+      ApiPaths.petPhotos(petId),
       data: {
         'fileName': fileName,
         'contentType': contentType,
-        'fileSize': fileSize,
+        'imageBase64': imageBase64,
       },
     );
-    return PhotoUploadTicketDto.fromJson(response.data!);
-  }
-
-  Future<void> uploadBytes({
-    required PhotoUploadTicket ticket,
-    required Uint8List bytes,
-    required String contentType,
-  }) async {
-    final headers = <String, dynamic>{...ticket.requiredHeaders};
-    final hasContentType = headers.keys.any(
-      (key) => key.toLowerCase() == 'content-type',
-    );
-    if (!hasContentType) headers['Content-Type'] = contentType;
-
-    final uploadClient = GatewayUrlResolver.isGatewayUrl(ticket.uploadUrl)
-        ? _dio
-        : _uploadDio;
-    await uploadClient.request<void>(
-      GatewayUrlResolver.resolve(ticket.uploadUrl),
-      data: bytes,
-      options: Options(method: ticket.method.toUpperCase(), headers: headers),
-    );
-  }
-
-  Future<void> confirmPhoto(String petId, String objectKey) async {
-    await _dio.post<Map<String, dynamic>>(
-      ApiPaths.confirmPhoto(petId),
-      data: {'objectKey': objectKey},
-    );
+    return PetPhotoDto.fromJson(response.data!);
   }
 
   Future<void> deletePhoto(String petId, String photoId) async {

@@ -124,19 +124,3 @@ class PetPhoto {
   final bool isMain;
   final DateTime createdAt;
 }
-
-class PhotoUploadTicket {
-  const PhotoUploadTicket({
-    required this.objectKey,
-    required this.uploadUrl,
-    required this.expiresAtUtc,
-    required this.requiredHeaders,
-    this.method = 'PUT',
-  });
-
-  final String objectKey;
-  final String uploadUrl;
-  final DateTime expiresAtUtc;
-  final Map<String, String> requiredHeaders;
-  final String method;
-}

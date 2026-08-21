@@ -20,9 +20,6 @@ class ApiPaths {
   static String pet(String petId) => '$pets/$petId';
   static String breeds(int speciesId) => '$species/$speciesId/breeds';
   static String petPhotos(String petId) => '${pet(petId)}/photos';
-  static String photoUploadUrl(String petId) =>
-      '${petPhotos(petId)}/upload-url';
-  static String confirmPhoto(String petId) => '${petPhotos(petId)}/confirm';
   static String petPhoto(String petId, String photoId) =>
       '${petPhotos(petId)}/$photoId';
   static String mainPetPhoto(String petId, String photoId) =>

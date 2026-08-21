@@ -6,17 +6,18 @@ import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_icons.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_bottom_nav_bar.dart';
+import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/error_state.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/app_top_bar.dart';
 import '../../../../core/widgets/fade_slide_in.dart';
 import '../../../../core/widgets/responsive_center.dart';
 import '../../../../core/widgets/section_title.dart';
 import '../../../authentication/application/auth_state_controller.dart';
-import '../widgets/mock_pet.dart';
+import '../../../pets/application/providers.dart';
 import '../widgets/pet_summary_card.dart';
 
-/// First-iteration Home dashboard. Pet data is mocked purely to visualize
-/// the design — Pets/Genealogy/Matching/Health remain placeholder routes.
+/// Home dashboard backed by the same data as the full Pets screen.
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
@@ -58,7 +59,12 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authStateControllerProvider);
+    final pets = ref.watch(myPetsProvider);
     final firstName = authState.user?.fullName.trim().split(' ').first;
+    final loadedPets = pets.asData?.value;
+    final firstPetName = loadedPets == null || loadedPets.isEmpty
+        ? null
+        : loadedPets.first.name;
 
     return Scaffold(
       body: SafeArea(
@@ -73,24 +79,15 @@ class HomePage extends ConsumerWidget {
               FadeSlideIn(
                 child: AppTopBar(
                   title: '¡Hola, ${firstName ?? 'amigo'}! 👋',
-                  subtitle: '¿Cómo está ${mockPets.first.name} hoy?',
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(AppIcons.notification),
-                        onPressed: () => AppSnackBar.showInfo(
-                          context,
-                          'No tienes notificaciones nuevas.',
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(AppIcons.logout),
-                        onPressed: () => ref
-                            .read(authStateControllerProvider.notifier)
-                            .logout(),
-                      ),
-                    ],
+                  subtitle: firstPetName == null
+                      ? '¿Cómo están tus mascotas hoy?'
+                      : '¿Cómo está $firstPetName hoy?',
+                  trailing: IconButton(
+                    icon: const Icon(AppIcons.notification),
+                    onPressed: () => AppSnackBar.showInfo(
+                      context,
+                      'No tienes notificaciones nuevas.',
+                    ),
                   ),
                 ),
               ),
@@ -106,20 +103,46 @@ class HomePage extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
-              for (final (index, pet) in mockPets.indexed)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                  child: FadeSlideIn(
-                    delay: Duration(milliseconds: 120 + index * 60),
-                    child: PetSummaryCard(
-                      pet: pet,
-                      onTap: () => AppSnackBar.showInfo(
-                        context,
-                        'Próximamente disponible.',
-                      ),
-                    ),
+              ...pets.when(
+                loading: () => const [
+                  Padding(
+                    padding: EdgeInsets.all(AppSpacing.xl),
+                    child: Center(child: CircularProgressIndicator()),
                   ),
-                ),
+                ],
+                error: (error, _) => [
+                  ErrorState(
+                    message: error.toString(),
+                    onRetry: () => ref.invalidate(myPetsProvider),
+                  ),
+                ],
+                data: (items) => items.isEmpty
+                    ? [
+                        EmptyState(
+                          icon: Icons.pets_outlined,
+                          title: 'Aún no tienes mascotas',
+                          message: 'Agrega tu primera mascota',
+                          actionLabel: 'Agregar mascota',
+                          onAction: () => context.push(AppRoutes.newPet),
+                        ),
+                      ]
+                    : [
+                        for (final (index, pet) in items.indexed)
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: AppSpacing.md,
+                            ),
+                            child: FadeSlideIn(
+                              delay: Duration(milliseconds: 120 + index * 60),
+                              child: PetSummaryCard(
+                                pet: pet,
+                                onTap: () =>
+                                    context.push(AppRoutes.petDetails(pet.id)),
+                              ),
+                            ),
+                          ),
+                      ],
+              ),
             ],
           ),
         ),

@@ -74,7 +74,9 @@ class _PetFormPageState extends ConsumerState<PetFormPage> {
   }
 
   Widget _buildScaffold() {
-    final isSubmitting = ref.watch(petFormControllerProvider);
+    final isSubmitting =
+        ref.watch(petFormControllerProvider) ||
+        ref.watch(petPhotoControllerProvider);
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.isEditing ? 'Editar mascota' : 'Agregar mascota'),
@@ -87,13 +89,12 @@ class _PetFormPageState extends ConsumerState<PetFormPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (!widget.isEditing) ...[
-                  _PhotoSelector(
-                    photo: _selectedPhoto,
-                    onTap: _showPhotoSource,
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-                ],
+                _PhotoSelector(
+                  photo: _selectedPhoto,
+                  onTap: isSubmitting ? null : _showPhotoSource,
+                  isEditing: widget.isEditing,
+                ),
+                const SizedBox(height: AppSpacing.xl),
                 Text('Información básica', style: AppTypography.h3),
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
@@ -295,10 +296,23 @@ class _PetFormPageState extends ConsumerState<PetFormPage> {
 
     final controller = ref.read(petFormControllerProvider.notifier);
     if (widget.isEditing) {
-      final result = await controller.update(widget.petId!, _draft());
+      final result = await controller.updateWithOptionalPhoto(
+        widget.petId!,
+        _draft(),
+        _selectedPhoto,
+      );
       if (!mounted) return;
       if (result.isFailure) {
         AppSnackBar.showError(context, result.failureOrNull!.message);
+        return;
+      }
+      final photoFailure = result.valueOrNull!.photoFailure;
+      if (photoFailure != null) {
+        AppSnackBar.showError(
+          context,
+          'Los datos se actualizaron, pero no se pudo guardar la foto. '
+          '${photoFailure.message}',
+        );
         return;
       }
       AppSnackBar.showSuccess(context, 'Mascota actualizada correctamente.');
@@ -306,28 +320,24 @@ class _PetFormPageState extends ConsumerState<PetFormPage> {
       return;
     }
 
-    final result = await controller.create(_draft());
+    final result = await controller.createWithOptionalPhoto(
+      _draft(),
+      _selectedPhoto,
+    );
     if (!mounted) return;
     if (result.isFailure) {
       AppSnackBar.showError(context, result.failureOrNull!.message);
       return;
     }
-    final petId = result.valueOrNull!;
-    final photo = _selectedPhoto;
-    if (photo != null) {
-      final photoResult = await ref
-          .read(petPhotoControllerProvider.notifier)
-          .upload(petId, photo);
-      if (!mounted) return;
-      if (photoResult.isFailure) {
-        AppSnackBar.showError(
-          context,
-          'La mascota fue creada, pero no se pudo subir la foto.',
-        );
-      }
+    final outcome = result.valueOrNull!;
+    if (outcome.photoFailure != null) {
+      AppSnackBar.showError(
+        context,
+        'Tu mascota fue creada, pero no se pudo guardar la foto.',
+      );
     }
     if (!mounted) return;
-    context.go(AppRoutes.petDetails(petId));
+    context.go(AppRoutes.petDetails(outcome.petId));
   }
 
   Future<void> _delete() async {
@@ -420,9 +430,14 @@ class _BreedField extends ConsumerWidget {
 }
 
 class _PhotoSelector extends StatelessWidget {
-  const _PhotoSelector({required this.photo, required this.onTap});
+  const _PhotoSelector({
+    required this.photo,
+    required this.onTap,
+    required this.isEditing,
+  });
   final SelectedPhoto? photo;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
+  final bool isEditing;
 
   @override
   Widget build(BuildContext context) {
@@ -448,7 +463,10 @@ class _PhotoSelector extends StatelessWidget {
                   : null,
             ),
             const SizedBox(height: AppSpacing.sm),
-            Text('Agregar foto', style: AppTypography.caption),
+            Text(
+              isEditing ? 'Agregar o cambiar foto' : 'Agregar foto',
+              style: AppTypography.caption,
+            ),
           ],
         ),
       ),

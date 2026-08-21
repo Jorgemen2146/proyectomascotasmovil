@@ -26,14 +26,19 @@ void main() {
     );
 
     expect(
-      GatewayUrlResolver.resolve('/uploads/pet.jpg'),
-      'http://gateway.test/uploads/pet.jpg',
+      GatewayUrlResolver.resolve('/api/v1/pets/pet-1/photos/photo-1/content'),
+      'http://gateway.test/api/v1/pets/pet-1/photos/photo-1/content',
     );
     expect(
       GatewayUrlResolver.resolve('https://cdn.example.test/pet.jpg'),
       'https://cdn.example.test/pet.jpg',
     );
-    expect(GatewayUrlResolver.isGatewayUrl('/uploads/pet.jpg'), isTrue);
+    expect(
+      GatewayUrlResolver.isGatewayUrl(
+        '/api/v1/pets/pet-1/photos/photo-1/content',
+      ),
+      isTrue,
+    );
     expect(
       GatewayUrlResolver.isGatewayUrl('https://cdn.example.test/pet.jpg'),
       isFalse,

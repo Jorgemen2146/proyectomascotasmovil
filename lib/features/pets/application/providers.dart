@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/app_failure.dart';
@@ -11,10 +10,7 @@ import '../domain/entities/pet.dart';
 import '../domain/repositories/pets_repository.dart';
 
 final petsRemoteDataSourceProvider = Provider<PetsRemoteDataSource>((ref) {
-  return PetsRemoteDataSource(
-    dio: ref.read(gatewayDioProvider),
-    uploadDio: Dio(),
-  );
+  return PetsRemoteDataSource(dio: ref.read(gatewayDioProvider));
 });
 
 final petsRepositoryProvider = Provider<PetsRepository>((ref) {
@@ -52,6 +48,13 @@ final petPhotosProvider = FutureProvider.autoDispose
       return _unwrap(await ref.read(petsRepositoryProvider).getPhotos(petId));
     });
 
+class PetSaveOutcome {
+  const PetSaveOutcome({required this.petId, this.photoFailure});
+
+  final String petId;
+  final AppFailure? photoFailure;
+}
+
 class PetFormController extends AutoDisposeNotifier<bool> {
   @override
   bool build() => false;
@@ -65,6 +68,35 @@ class PetFormController extends AutoDisposeNotifier<bool> {
     state = false;
     if (result.isSuccess) ref.invalidate(myPetsProvider);
     return result;
+  }
+
+  Future<Result<PetSaveOutcome>> createWithOptionalPhoto(
+    PetDraft draft,
+    SelectedPhoto? photo,
+  ) async {
+    if (state) {
+      return const Result.failure(UnknownFailure('Operación en curso.'));
+    }
+    state = true;
+    final repository = ref.read(petsRepositoryProvider);
+    final created = await repository.createPet(draft);
+    if (created.isFailure) {
+      state = false;
+      return Result.failure(created.failureOrNull!);
+    }
+
+    final petId = created.valueOrNull!;
+    ref.invalidate(myPetsProvider);
+    AppFailure? photoFailure;
+    if (photo != null) {
+      final uploaded = await repository.uploadPhoto(petId, photo);
+      photoFailure = uploaded.failureOrNull;
+      if (uploaded.isSuccess) _invalidatePet(petId);
+    }
+    state = false;
+    return Result.success(
+      PetSaveOutcome(petId: petId, photoFailure: photoFailure),
+    );
   }
 
   Future<Result<void>> update(String petId, PetDraft draft) async {
@@ -83,6 +115,35 @@ class PetFormController extends AutoDisposeNotifier<bool> {
     return result;
   }
 
+  Future<Result<PetSaveOutcome>> updateWithOptionalPhoto(
+    String petId,
+    PetDraft draft,
+    SelectedPhoto? photo,
+  ) async {
+    if (state) {
+      return const Result.failure(UnknownFailure('Operación en curso.'));
+    }
+    state = true;
+    final repository = ref.read(petsRepositoryProvider);
+    final updated = await repository.updatePet(petId, draft);
+    if (updated.isFailure) {
+      state = false;
+      return Result.failure(updated.failureOrNull!);
+    }
+
+    _invalidatePet(petId);
+    AppFailure? photoFailure;
+    if (photo != null) {
+      final uploaded = await repository.uploadPhoto(petId, photo);
+      photoFailure = uploaded.failureOrNull;
+      if (uploaded.isSuccess) _invalidatePet(petId);
+    }
+    state = false;
+    return Result.success(
+      PetSaveOutcome(petId: petId, photoFailure: photoFailure),
+    );
+  }
+
   Future<Result<void>> delete(String petId) async {
     if (state) {
       return const Result.failure(UnknownFailure('Operación en curso.'));
@@ -97,6 +158,12 @@ class PetFormController extends AutoDisposeNotifier<bool> {
     }
     return result;
   }
+
+  void _invalidatePet(String petId) {
+    ref.invalidate(myPetsProvider);
+    ref.invalidate(petDetailsProvider(petId));
+    ref.invalidate(petPhotosProvider(petId));
+  }
 }
 
 final petFormControllerProvider =
@@ -106,7 +173,7 @@ class PetPhotoController extends AutoDisposeNotifier<bool> {
   @override
   bool build() => false;
 
-  Future<Result<void>> upload(String petId, SelectedPhoto photo) async {
+  Future<Result<PetPhoto>> upload(String petId, SelectedPhoto photo) async {
     if (state) {
       return const Result.failure(UnknownFailure('Operación en curso.'));
     }

@@ -39,6 +39,9 @@ dynamic sanitizeHttpValue(dynamic value) {
   if (value is Map) {
     return value.map((key, dynamic nestedValue) {
       final normalizedKey = key.toString().toLowerCase();
+      if (_base64Keys.contains(normalizedKey)) {
+        return MapEntry(key, '[BASE64_IMAGE_REMOVED]');
+      }
       if (_sensitiveKeys.contains(normalizedKey)) {
         return MapEntry(key, '***');
       }
@@ -58,3 +61,5 @@ const _sensitiveKeys = {
   'refreshtoken',
   'authorization',
 };
+
+const _base64Keys = {'imagebase64', 'base64', 'imagedata'};

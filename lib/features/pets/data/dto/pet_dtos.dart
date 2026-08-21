@@ -173,38 +173,6 @@ class PetPhotoDto {
   );
 }
 
-class PhotoUploadTicketDto {
-  const PhotoUploadTicketDto({
-    required this.objectKey,
-    required this.uploadUrl,
-    required this.expiresAtUtc,
-    required this.requiredHeaders,
-    required this.method,
-  });
-  factory PhotoUploadTicketDto.fromJson(Map<String, dynamic> json) =>
-      PhotoUploadTicketDto(
-        objectKey: json['objectKey'] as String,
-        uploadUrl: json['uploadUrl'] as String,
-        expiresAtUtc: DateTime.parse(json['expiresAtUtc'] as String),
-        requiredHeaders: ((json['requiredHeaders'] as Map?) ?? const {}).map(
-          (key, value) => MapEntry(key.toString(), value.toString()),
-        ),
-        method: (json['method'] as String?) ?? 'PUT',
-      );
-  final String objectKey;
-  final String uploadUrl;
-  final DateTime expiresAtUtc;
-  final Map<String, String> requiredHeaders;
-  final String method;
-  PhotoUploadTicket toDomain() => PhotoUploadTicket(
-    objectKey: objectKey,
-    uploadUrl: uploadUrl,
-    expiresAtUtc: expiresAtUtc,
-    requiredHeaders: requiredHeaders,
-    method: method,
-  );
-}
-
 class CreatePetRequestDto {
   const CreatePetRequestDto(this.draft);
   final PetDraft draft;

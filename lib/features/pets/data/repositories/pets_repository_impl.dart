@@ -59,22 +59,27 @@ class PetsRepositoryImpl implements PetsRepository {
   });
 
   @override
-  Future<Result<void>> uploadPhoto(String petId, SelectedPhoto photo) =>
-      _run(() async {
-        final ticket = (await _remoteDataSource.createPhotoUploadUrl(
-          petId: petId,
-          fileName: photo.fileName,
-          contentType: photo.contentType,
-          fileSize: photo.fileSize,
-        )).toDomain();
-        final bytes = await photo.file.readAsBytes();
-        await _remoteDataSource.uploadBytes(
-          ticket: ticket,
-          bytes: bytes,
-          contentType: photo.contentType,
-        );
-        await _remoteDataSource.confirmPhoto(petId, ticket.objectKey);
-      });
+  Future<Result<PetPhoto>> uploadPhoto(
+    String petId,
+    SelectedPhoto photo,
+  ) async {
+    try {
+      final prepared = await preparePhotoUpload(photo);
+      final uploaded = await _remoteDataSource.uploadPhotoBase64(
+        petId,
+        prepared.fileName,
+        prepared.contentType,
+        prepared.imageBase64,
+      );
+      return Result.success(uploaded.toDomain());
+    } on PhotoValidationException catch (error) {
+      return Result.failure(ValidationFailure(error.message));
+    } on DioException catch (error) {
+      return Result.failure(_mapPhotoFailure(error));
+    } catch (_) {
+      return const Result.failure(UnknownFailure());
+    }
+  }
 
   @override
   Future<Result<void>> deletePhoto(String petId, String photoId) =>
@@ -95,4 +100,35 @@ class PetsRepositoryImpl implements PetsRepository {
       return const Result.failure(UnknownFailure());
     }
   }
+}
+
+AppFailure _mapPhotoFailure(DioException error) {
+  final mapped = mapExceptionToFailure(mapDioExceptionToAppException(error));
+  final statusCode = error.response?.statusCode;
+  if (statusCode == 400) {
+    return const ValidationFailure('El formato de la imagen no es válido.');
+  }
+  if (statusCode == 413) {
+    return const ServerFailure(
+      'La imagen es demasiado grande. El tamaño máximo permitido es 10 MB.',
+      statusCode: 413,
+    );
+  }
+  if (statusCode == 403) {
+    return const ServerFailure(
+      'No tienes permiso para modificar esta mascota.',
+      statusCode: 403,
+    );
+  }
+  if (statusCode == 500 && mapped is ServerFailure) {
+    final errorId = mapped.errorCode;
+    return ServerFailure(
+      errorId == null || errorId.isEmpty
+          ? 'Hubo un problema al guardar la foto.'
+          : 'Hubo un problema al guardar la foto. Código: $errorId',
+      statusCode: 500,
+      errorCode: errorId,
+    );
+  }
+  return mapped;
 }

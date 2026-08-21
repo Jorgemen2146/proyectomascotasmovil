@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:image_picker/image_picker.dart';
 
 enum PhotoSource { gallery, camera }
@@ -14,6 +17,27 @@ class SelectedPhoto {
   final String fileName;
   final String contentType;
   final int fileSize;
+}
+
+class PreparedPhotoUpload {
+  const PreparedPhotoUpload({
+    required this.fileName,
+    required this.contentType,
+    required this.imageBase64,
+  });
+
+  final String fileName;
+  final String contentType;
+  final String imageBase64;
+}
+
+class PhotoValidationException implements Exception {
+  const PhotoValidationException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
 }
 
 sealed class PhotoSelectionResult {
@@ -42,7 +66,9 @@ class ImagePickerPhotoPickerService implements PhotoPickerService {
   ImagePickerPhotoPickerService({ImagePicker? picker})
     : _picker = picker ?? ImagePicker();
 
-  static const maxBytes = 5 * 1024 * 1024;
+  static const maxBytes = 10 * 1024 * 1024;
+  static const maxDimension = 1600.0;
+  static const jpegQuality = 82;
   final ImagePicker _picker;
 
   @override
@@ -51,7 +77,9 @@ class ImagePickerPhotoPickerService implements PhotoPickerService {
       source: source == PhotoSource.camera
           ? ImageSource.camera
           : ImageSource.gallery,
-      imageQuality: 90,
+      maxWidth: maxDimension,
+      maxHeight: maxDimension,
+      imageQuality: jpegQuality,
     );
     if (file == null) return const PhotoSelectionCancelled();
 
@@ -75,7 +103,8 @@ class ImagePickerPhotoPickerService implements PhotoPickerService {
       return 'Selecciona una imagen JPG, PNG o WebP.';
     }
     if (fileSize > maxBytes) {
-      return 'La imagen no puede superar los 5 MB.';
+      return 'La imagen es demasiado grande. '
+          'El tamaño máximo permitido es 10 MB.';
     }
     return null;
   }
@@ -88,4 +117,34 @@ class ImagePickerPhotoPickerService implements PhotoPickerService {
       _ => 'application/octet-stream',
     };
   }
+}
+
+Future<PreparedPhotoUpload> preparePhotoUpload(SelectedPhoto photo) async {
+  if (photo.file.path.isNotEmpty && !await File(photo.file.path).exists()) {
+    throw const PhotoValidationException(
+      'No se encontró la imagen seleccionada. Inténtalo nuevamente.',
+    );
+  }
+
+  final bytes = await photo.file.readAsBytes();
+  final validation = ImagePickerPhotoPickerService.validatePhoto(
+    photo.fileName,
+    bytes.length,
+  );
+  if (validation != null) throw PhotoValidationException(validation);
+
+  final contentType = ImagePickerPhotoPickerService.contentTypeFor(
+    photo.fileName,
+  );
+  if (contentType == 'application/octet-stream') {
+    throw const PhotoValidationException(
+      'No se pudo identificar el formato de la imagen.',
+    );
+  }
+
+  return PreparedPhotoUpload(
+    fileName: photo.fileName,
+    contentType: contentType,
+    imageBase64: base64Encode(bytes),
+  );
 }

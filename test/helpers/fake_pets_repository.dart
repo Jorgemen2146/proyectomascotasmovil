@@ -1,4 +1,5 @@
 import 'package:dogplatform/core/result/result.dart';
+import 'package:dogplatform/core/errors/app_failure.dart';
 import 'package:dogplatform/core/services/photo_picker_service.dart';
 import 'package:dogplatform/features/pets/domain/entities/pet.dart';
 import 'package:dogplatform/features/pets/domain/repositories/pets_repository.dart';
@@ -17,6 +18,7 @@ class FakePetsRepository implements PetsRepository {
   int uploadCalls = 0;
   int setMainPhotoCalls = 0;
   int deletePhotoCalls = 0;
+  AppFailure? uploadFailure;
   PetDraft? lastDraft;
 
   @override
@@ -61,9 +63,21 @@ class FakePetsRepository implements PetsRepository {
       Result.success(photos);
 
   @override
-  Future<Result<void>> uploadPhoto(String petId, SelectedPhoto photo) async {
+  Future<Result<PetPhoto>> uploadPhoto(
+    String petId,
+    SelectedPhoto photo,
+  ) async {
     uploadCalls++;
-    return const Result.success(null);
+    if (uploadFailure != null) return Result.failure(uploadFailure!);
+    return Result.success(
+      PetPhoto(
+        photoId: 'photo-created',
+        petId: petId,
+        url: '/api/v1/pets/$petId/photos/photo-created/content',
+        isMain: true,
+        createdAt: DateTime.utc(2026),
+      ),
+    );
   }
 
   @override
