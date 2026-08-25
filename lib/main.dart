@@ -41,12 +41,16 @@ class _DogPlatformAppState extends ConsumerState<DogPlatformApp>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed) return;
-    if (ref.read(authStateControllerProvider).status ==
+    if (ref.read(authStateControllerProvider).status !=
         AuthStatus.authenticated) {
-      ref
-          .read(notificationsControllerProvider.notifier)
-          .refreshUnreadCount(silent: true);
+      return;
+    }
+    final controller = ref.read(notificationsControllerProvider.notifier);
+    if (state == AppLifecycleState.resumed) {
+      controller.resumeFromBackground();
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      controller.pauseRealtime();
     }
   }
 

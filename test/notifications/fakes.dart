@@ -1,8 +1,8 @@
 import 'package:dogplatform/core/errors/app_failure.dart';
 import 'package:dogplatform/core/result/result.dart';
-import 'package:dogplatform/features/notifications/application/providers.dart';
 import 'package:dogplatform/features/notifications/domain/entities/notification.dart';
 import 'package:dogplatform/features/notifications/domain/repositories/notifications_repository.dart';
+import 'package:dogplatform/features/notifications/domain/repositories/notification_realtime_transport.dart';
 
 class FakeNotificationsRepository implements NotificationsRepository {
   int unreadCount = 0;
@@ -58,20 +58,44 @@ class FakeNotificationsRepository implements NotificationsRepository {
   }
 }
 
-class ThrowingRealtimeService implements NotificationRealtimeService {
+class FakeRealtimeTransport implements NotificationRealtimeTransport {
+  int connectCalls = 0;
   int disconnectCalls = 0;
+  bool throwOnConnect = false;
+  NotificationReceivedCallback? onNotification;
+  NotificationConnectedCallback? onConnected;
 
   @override
-  bool get isAvailable => true;
+  bool isConnected = false;
 
   @override
-  Future<void> connect(
-    void Function(AppNotification notification) onNotification,
-  ) => throw StateError('hub unavailable');
+  Future<void> connect({
+    required NotificationAccessTokenProvider accessTokenProvider,
+    required NotificationReceivedCallback onNotification,
+    required NotificationConnectedCallback onConnected,
+  }) async {
+    connectCalls++;
+    this.onNotification = onNotification;
+    this.onConnected = onConnected;
+    await accessTokenProvider();
+    if (throwOnConnect) throw StateError('socket unavailable');
+    isConnected = true;
+  }
+
+  void emit(AppNotification value) => onNotification?.call(value);
+
+  Future<void> simulateConnected() async => onConnected?.call();
 
   @override
   Future<void> disconnect() async {
     disconnectCalls++;
+    isConnected = false;
+  }
+}
+
+class ThrowingRealtimeTransport extends FakeRealtimeTransport {
+  ThrowingRealtimeTransport() {
+    throwOnConnect = true;
   }
 }
 

@@ -102,6 +102,26 @@ class UnreadCountDto {
   final int count;
 }
 
+class NotificationRealtimeEnvelopeDto {
+  const NotificationRealtimeEnvelopeDto._();
+
+  static AppNotification? tryParse(String payload) {
+    try {
+      final decoded = jsonDecode(payload);
+      if (decoded is! Map<String, dynamic> ||
+          decoded['event'] != 'notificationReceived') {
+        return null;
+      }
+      final data = decoded['data'];
+      if (data is! Map<String, dynamic>) return null;
+      final notification = NotificationDto.fromJson(data).toDomain();
+      return notification.notificationId.trim().isEmpty ? null : notification;
+    } on Object {
+      return null;
+    }
+  }
+}
+
 NotificationMetadata? _metadata(String? value) {
   if (value == null || value.trim().isEmpty) return null;
   try {

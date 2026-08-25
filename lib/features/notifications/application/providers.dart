@@ -3,13 +3,16 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/network_providers.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/result/result.dart';
 import '../../authentication/application/auth_state.dart';
 import '../../authentication/application/auth_state_controller.dart';
 import '../data/datasources/notifications_remote_data_source.dart';
 import '../data/repositories/notifications_repository_impl.dart';
+import '../data/realtime/web_socket_notification_realtime_transport.dart';
 import '../domain/entities/notification.dart';
 import '../domain/repositories/notifications_repository.dart';
+import '../domain/repositories/notification_realtime_transport.dart';
 import 'notifications_state.dart';
 
 final notificationsRemoteDataSourceProvider =
@@ -25,41 +28,34 @@ final notificationsRepositoryProvider = Provider<NotificationsRepository>((
   );
 });
 
-abstract class NotificationRealtimeService {
-  bool get isAvailable;
-  Future<void> connect(
-    void Function(AppNotification notification) onNotification,
-  );
-  Future<void> disconnect();
-}
+final notificationRealtimeTransportProvider =
+    Provider<NotificationRealtimeTransport>((ref) {
+      final transport = WebSocketNotificationRealtimeTransport(
+        apiBaseUrl: AppConfig.instance.apiBaseUrl,
+      );
+      ref.onDispose(() => unawaited(transport.disconnect()));
+      return transport;
+    });
 
-class GatewayBlockedNotificationRealtimeService
-    implements NotificationRealtimeService {
-  const GatewayBlockedNotificationRealtimeService();
-
-  @override
-  bool get isAvailable => false;
-
-  @override
-  Future<void> connect(
-    void Function(AppNotification notification) onNotification,
-  ) async {}
-
-  @override
-  Future<void> disconnect() async {}
-}
-
-final notificationRealtimeServiceProvider =
-    Provider<NotificationRealtimeService>(
-      (ref) => const GatewayBlockedNotificationRealtimeService(),
-    );
+final notificationAccessTokenProvider = Provider<Future<String?> Function()>((
+  ref,
+) {
+  return ref.read(secureTokenStorageProvider).readAccessToken;
+});
 
 class NotificationsController extends Notifier<NotificationsState> {
   @override
   NotificationsState build() => const NotificationsState();
 
   Future<void> initialize() async {
-    await refreshUnreadCount(silent: true);
+    await _startRealtime();
+  }
+
+  Future<void> pauseRealtime() =>
+      ref.read(notificationRealtimeTransportProvider).disconnect();
+
+  Future<void> resumeFromBackground() async {
+    await _resynchronize(includeList: true);
     await _startRealtime();
   }
 
@@ -174,9 +170,21 @@ class NotificationsController extends Notifier<NotificationsState> {
   }
 
   void handleNotificationReceived(AppNotification notification) {
-    if (state.items.any(
+    final existingIndex = state.items.indexWhere(
       (item) => item.notificationId == notification.notificationId,
-    )) {
+    );
+    if (existingIndex >= 0) {
+      final existing = state.items[existingIndex];
+      final updatedItems = [...state.items]..[existingIndex] = notification;
+      final unreadDelta = switch ((existing.isRead, notification.isRead)) {
+        (true, false) => 1,
+        (false, true) => -1,
+        _ => 0,
+      };
+      state = state.copyWith(
+        items: updatedItems,
+        unreadCount: (state.unreadCount + unreadDelta).clamp(0, 1 << 31),
+      );
       return;
     }
     state = state.copyWith(
@@ -189,18 +197,33 @@ class NotificationsController extends Notifier<NotificationsState> {
   }
 
   Future<void> clear() async {
-    await ref.read(notificationRealtimeServiceProvider).disconnect();
+    await ref.read(notificationRealtimeTransportProvider).disconnect();
     state = const NotificationsState();
   }
 
   Future<void> _startRealtime() async {
-    final realtime = ref.read(notificationRealtimeServiceProvider);
-    if (!realtime.isAvailable) return;
+    final realtime = ref.read(notificationRealtimeTransportProvider);
     try {
-      await realtime.connect(handleNotificationReceived);
+      await realtime.connect(
+        accessTokenProvider: _prepareRealtimeConnection,
+        onNotification: handleNotificationReceived,
+        onConnected: () => _resynchronize(includeList: state.hasLoadedList),
+      );
     } catch (_) {
       // REST remains authoritative when realtime is unavailable.
     }
+  }
+
+  Future<String?> _prepareRealtimeConnection() async {
+    // This authenticated REST request reuses Dio's single-flight JWT refresh
+    // before each socket attempt. The socket never owns refresh-token logic.
+    await refreshUnreadCount(silent: true);
+    return ref.read(notificationAccessTokenProvider)();
+  }
+
+  Future<void> _resynchronize({required bool includeList}) async {
+    await refreshUnreadCount(silent: true);
+    if (includeList) await loadNotifications(force: true);
   }
 }
 

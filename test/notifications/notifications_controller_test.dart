@@ -1,10 +1,56 @@
 import 'package:dogplatform/features/notifications/application/providers.dart';
+import 'package:dogplatform/features/authentication/application/auth_state.dart';
+import 'package:dogplatform/features/authentication/application/auth_state_controller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'fakes.dart';
 
 void main() {
+  test('no conecta sin sesion y conecta al autenticarse', () async {
+    final repository = FakeNotificationsRepository();
+    final realtime = FakeRealtimeTransport();
+    final auth = StubAuthStateController();
+    final container = _container(
+      repository,
+      realtime: realtime,
+      authController: auth,
+    );
+    addTearDown(container.dispose);
+
+    container.read(notificationsSessionCoordinatorProvider);
+    await _flushEvents();
+    expect(realtime.connectCalls, 0);
+
+    auth.setStatus(AuthStatus.authenticated);
+    await _flushEvents();
+    expect(realtime.connectCalls, 1);
+  });
+
+  test('logout desconecta y limpia estado global', () async {
+    final repository = FakeNotificationsRepository();
+    final realtime = FakeRealtimeTransport();
+    final auth = StubAuthStateController(AuthStatus.authenticated);
+    final container = _container(
+      repository,
+      realtime: realtime,
+      authController: auth,
+    );
+    addTearDown(container.dispose);
+
+    container.read(notificationsSessionCoordinatorProvider);
+    await _flushEvents();
+    realtime.emit(notification());
+    expect(container.read(notificationsControllerProvider).unreadCount, 1);
+
+    auth.setStatus(AuthStatus.unauthenticated);
+    await _flushEvents();
+
+    expect(realtime.disconnectCalls, 1);
+    expect(container.read(notificationsControllerProvider).items, isEmpty);
+    expect(container.read(notificationsControllerProvider).unreadCount, 0);
+  });
+
   test('unreadCount = 0 permanece sin pendientes', () async {
     final repository = FakeNotificationsRepository();
     final container = _container(repository);
@@ -71,7 +117,7 @@ void main() {
     final repository = FakeNotificationsRepository()
       ..unreadCount = 1
       ..items = [notification()];
-    final realtime = ThrowingRealtimeService();
+    final realtime = FakeRealtimeTransport();
     final container = _container(repository, realtime: realtime);
     addTearDown(container.dispose);
     final controller = container.read(notificationsControllerProvider.notifier);
@@ -100,11 +146,81 @@ void main() {
     expect(state.unreadCount, 1);
   });
 
+  test('notificationId existente se actualiza sin duplicar', () {
+    final container = _container(FakeNotificationsRepository());
+    addTearDown(container.dispose);
+    final controller = container.read(notificationsControllerProvider.notifier);
+    controller.handleNotificationReceived(notification(isRead: true));
+
+    controller.handleNotificationReceived(notification(isRead: false));
+
+    final state = container.read(notificationsControllerProvider);
+    expect(state.items, hasLength(1));
+    expect(state.items.single.isRead, isFalse);
+    expect(state.unreadCount, 1);
+  });
+
+  test(
+    'initialize conecta realtime y el evento actualiza badge/lista',
+    () async {
+      final repository = FakeNotificationsRepository();
+      final realtime = FakeRealtimeTransport();
+      final container = _container(repository, realtime: realtime);
+      addTearDown(container.dispose);
+
+      await container
+          .read(notificationsControllerProvider.notifier)
+          .initialize();
+      realtime.emit(notification());
+
+      final state = container.read(notificationsControllerProvider);
+      expect(realtime.connectCalls, 1);
+      expect(state.items.single.notificationId, 'notification-1');
+      expect(state.unreadCount, 1);
+    },
+  );
+
+  test('foreground resincroniza unread y lista y asegura conexion', () async {
+    final repository = FakeNotificationsRepository()
+      ..unreadCount = 2
+      ..items = [notification(id: 'persisted')];
+    final realtime = FakeRealtimeTransport();
+    final container = _container(repository, realtime: realtime);
+    addTearDown(container.dispose);
+    final controller = container.read(notificationsControllerProvider.notifier);
+    await controller.loadNotifications();
+    repository.listCalls = 0;
+    repository.unreadCalls = 0;
+
+    await controller.resumeFromBackground();
+
+    final state = container.read(notificationsControllerProvider);
+    expect(repository.unreadCalls, greaterThanOrEqualTo(1));
+    expect(repository.listCalls, 1);
+    expect(realtime.connectCalls, 1);
+    expect(state.unreadCount, 2);
+    expect(state.items.single.notificationId, 'persisted');
+  });
+
+  test('conexion exitosa resincroniza unread-count', () async {
+    final repository = FakeNotificationsRepository()..unreadCount = 7;
+    final realtime = FakeRealtimeTransport();
+    final container = _container(repository, realtime: realtime);
+    addTearDown(container.dispose);
+
+    await container.read(notificationsControllerProvider.notifier).initialize();
+    repository.unreadCalls = 0;
+    await realtime.simulateConnected();
+
+    expect(repository.unreadCalls, 1);
+    expect(container.read(notificationsControllerProvider).unreadCount, 7);
+  });
+
   test('fallo realtime no rompe inicialización REST', () async {
     final repository = FakeNotificationsRepository()..unreadCount = 4;
     final container = _container(
       repository,
-      realtime: ThrowingRealtimeService(),
+      realtime: ThrowingRealtimeTransport(),
     );
     addTearDown(container.dispose);
 
@@ -117,11 +233,33 @@ void main() {
 
 ProviderContainer _container(
   FakeNotificationsRepository repository, {
-  NotificationRealtimeService? realtime,
+  FakeRealtimeTransport? realtime,
+  StubAuthStateController? authController,
 }) => ProviderContainer(
   overrides: [
     notificationsRepositoryProvider.overrideWithValue(repository),
+    notificationAccessTokenProvider.overrideWithValue(() async => 'token'),
     if (realtime != null)
-      notificationRealtimeServiceProvider.overrideWithValue(realtime),
+      notificationRealtimeTransportProvider.overrideWithValue(realtime),
+    if (authController != null)
+      authStateControllerProvider.overrideWith(() => authController),
   ],
 );
+
+Future<void> _flushEvents() async {
+  await Future<void>.delayed(Duration.zero);
+  await Future<void>.delayed(Duration.zero);
+}
+
+class StubAuthStateController extends AuthStateController {
+  StubAuthStateController([this.initialStatus = AuthStatus.unauthenticated]);
+
+  final AuthStatus initialStatus;
+
+  @override
+  AuthState build() => AuthState(status: initialStatus);
+
+  void setStatus(AuthStatus status) {
+    state = AuthState(status: status);
+  }
+}
