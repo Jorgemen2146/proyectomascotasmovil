@@ -8,6 +8,10 @@ import '../../features/authentication/presentation/pages/register_page.dart';
 import '../../features/authentication/presentation/pages/splash_page.dart';
 import '../../features/authentication/presentation/pages/verify_email_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
+import '../../features/legal/application/providers.dart';
+import '../../features/legal/presentation/pages/legal_document_page.dart';
+import '../../features/legal/presentation/pages/legal_history_page.dart';
+import '../../features/legal/presentation/pages/legal_update_page.dart';
 import '../../features/health/presentation/pages/health_page.dart';
 import '../../features/genealogy/presentation/pages/genealogy_page.dart';
 import '../../features/genealogy/presentation/pages/genealogy_invitations_page.dart';
@@ -59,6 +63,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.notifications,
         builder: (context, state) => const NotificationsPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.legalTerms,
+        builder: (context, state) =>
+            const LegalDocumentPage(documentType: 'TermsAndConditions'),
+      ),
+      GoRoute(
+        path: AppRoutes.legalPrivacy,
+        builder: (context, state) =>
+            const LegalDocumentPage(documentType: 'PrivacyPolicy'),
+      ),
+      GoRoute(
+        path: AppRoutes.legalUpdate,
+        builder: (context, state) => const LegalUpdatePage(),
+      ),
+      GoRoute(
+        path: AppRoutes.legalHistory,
+        builder: (context, state) => const LegalHistoryPage(),
       ),
       GoRoute(
         path: AppRoutes.pets,
@@ -129,13 +151,25 @@ String? _redirect(Ref ref, GoRouterState state) {
       location == AppRoutes.login ||
       location == AppRoutes.register ||
       location == AppRoutes.verifyEmail;
+  final isPublicLegalRoute =
+      location == AppRoutes.legalTerms || location == AppRoutes.legalPrivacy;
+  final isLegalUpdate = location == AppRoutes.legalUpdate;
 
   switch (authState.status) {
     case AuthStatus.unknown:
       return isSplash ? null : AppRoutes.splash;
     case AuthStatus.unauthenticated:
-      return isAuthRoute ? null : AppRoutes.login;
+      return (isAuthRoute || isPublicLegalRoute) ? null : AppRoutes.login;
     case AuthStatus.authenticated:
+      final legalGate = ref.read(legalGateProvider);
+      final legalStatus = legalGate.valueOrNull;
+      final hasPendingLegal = legalStatus != null && !legalStatus.isUpToDate;
+      if (hasPendingLegal && !isLegalUpdate && !isPublicLegalRoute) {
+        return AppRoutes.legalUpdate;
+      }
+      if (legalStatus?.isUpToDate == true && isLegalUpdate) {
+        return AppRoutes.home;
+      }
       return (isSplash || isAuthRoute) ? AppRoutes.home : null;
   }
 }

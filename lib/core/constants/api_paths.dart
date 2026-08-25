@@ -13,6 +13,9 @@ class ApiPaths {
   static const String logout = '/api/v1/auth/logout';
   static const String me = '/api/v1/auth/me';
   static const String mePhoto = '/api/v1/auth/me/photo';
+  static const String legalDocuments = '/api/v1/auth/legal/documents';
+  static const String legalStatus = '/api/v1/auth/me/legal-status';
+  static const String legalConsents = '/api/v1/auth/me/legal-consents';
 
   static const String pets = '/api/v1/pets';
   static const String myPets = '/api/v1/pets/mine';

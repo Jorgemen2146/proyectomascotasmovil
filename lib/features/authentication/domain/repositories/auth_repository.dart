@@ -1,6 +1,7 @@
 import '../../../../core/result/result.dart';
 import '../../../../core/services/photo_picker_service.dart';
 import '../entities/user.dart';
+import '../../../legal/domain/entities/legal.dart';
 
 /// Domain-facing contract for authentication operations. The data layer
 /// provides the concrete implementation; application/presentation code only
@@ -13,6 +14,7 @@ abstract class AuthRepository {
     required String lastName,
     required String email,
     required String password,
+    required List<LegalConsentSelection> legalConsents,
     String? phoneNumber,
   });
 

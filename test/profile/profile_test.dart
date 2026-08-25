@@ -18,6 +18,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:go_router/go_router.dart';
+import 'package:dogplatform/core/router/app_routes.dart';
 
 import '../helpers/fake_auth_repository.dart';
 
@@ -132,6 +134,54 @@ void main() {
       GatewayUrlResolver.resolve(image.url),
       'https://gateway.example.test/api/v1/auth/me/photo/content',
     );
+  });
+
+  testWidgets('perfil abre Términos y Privacidad', (tester) async {
+    tester.view.physicalSize = const Size(800, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final router = GoRouter(
+      initialLocation: AppRoutes.profile,
+      routes: [
+        GoRoute(
+          path: AppRoutes.profile,
+          builder: (_, _) => const ProfilePage(),
+        ),
+        GoRoute(
+          path: AppRoutes.legalTerms,
+          builder: (_, _) =>
+              const Text('legal-terms', textDirection: TextDirection.ltr),
+        ),
+        GoRoute(
+          path: AppRoutes.legalPrivacy,
+          builder: (_, _) =>
+              const Text('legal-privacy', textDirection: TextDirection.ltr),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [authRepositoryProvider.overrideWithValue(repository)],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final termsLink = find.text('Términos y condiciones');
+    await tester.ensureVisible(termsLink);
+    await tester.tap(termsLink);
+    await tester.pumpAndSettle();
+    expect(find.text('legal-terms'), findsOneWidget);
+
+    router.go(AppRoutes.profile);
+    await tester.pumpAndSettle();
+    final privacyLink = find.text('Privacidad');
+    await tester.ensureVisible(privacyLink);
+    await tester.tap(privacyLink);
+    await tester.pumpAndSettle();
+    expect(find.text('legal-privacy'), findsOneWidget);
   });
 
   test('controller actualiza perfil e incluye teléfono', () async {

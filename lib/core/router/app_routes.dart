@@ -9,6 +9,10 @@ class AppRoutes {
   static const String verifyEmail = '/verify-email';
   static const String home = '/home';
   static const String notifications = '/notifications';
+  static const String legalTerms = '/legal/terms';
+  static const String legalPrivacy = '/legal/privacy';
+  static const String legalUpdate = '/legal/update';
+  static const String legalHistory = '/legal/history';
 
   static const String pets = '/pets';
   static const String newPet = '/pets/new';

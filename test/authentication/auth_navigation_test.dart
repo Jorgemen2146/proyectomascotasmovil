@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dogplatform/features/legal/application/providers.dart';
+import 'package:dogplatform/features/legal/domain/entities/legal.dart';
 
 import '../helpers/fake_auth_repository.dart';
 
@@ -33,7 +35,10 @@ void main() {
     addTearDown(router.dispose);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [authRepositoryProvider.overrideWithValue(repository)],
+        overrides: [
+          authRepositoryProvider.overrideWithValue(repository),
+          legalDocumentsProvider.overrideWith((ref) async => _documents),
+        ],
         child: MaterialApp.router(routerConfig: router),
       ),
     );
@@ -45,7 +50,10 @@ void main() {
     await tester.enterText(fields.at(2), 'dog@example.com');
     await tester.enterText(fields.at(3), 'password');
     await tester.enterText(fields.at(4), 'password');
-    await tester.tap(find.byType(Checkbox));
+    final consent = find.byType(Checkbox);
+    await tester.ensureVisible(consent);
+    await tester.tap(consent);
+    await tester.pump();
     final submit = find.text('Crear cuenta').last;
     await tester.ensureVisible(submit);
     await tester.tap(submit);
@@ -56,10 +64,16 @@ void main() {
     expect(repository.lastFirstName, 'Dog');
     expect(repository.lastLastName, 'User');
     expect(repository.lastPhoneNumber, isNull);
+    expect(repository.lastLegalConsents.map((consent) => consent.version), [
+      '2.0',
+      '3.0',
+    ]);
     expect(router.routeInformationProvider.value.uri.query, isEmpty);
   });
 
   testWidgets('Login EMAIL_NOT_VERIFIED navega a Verify Email', (tester) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 0.8;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     final repository = FakeAuthRepository()
       ..loginResult = const Result.failure(
         ServerFailure(
@@ -97,3 +111,26 @@ void main() {
     expect(find.text('verify:dog@example.com'), findsOneWidget);
   });
 }
+
+final _documents = [
+  LegalDocument(
+    legalDocumentId: 'terms',
+    type: 'TermsAndConditions',
+    version: '2.0',
+    title: 'Términos',
+    content: 'Contenido',
+    publishedAtUtc: DateTime.utc(2026),
+    effectiveAtUtc: DateTime.utc(2026),
+    requiresAcceptance: true,
+  ),
+  LegalDocument(
+    legalDocumentId: 'privacy',
+    type: 'PrivacyPolicy',
+    version: '3.0',
+    title: 'Privacidad',
+    content: 'Contenido',
+    publishedAtUtc: DateTime.utc(2026),
+    effectiveAtUtc: DateTime.utc(2026),
+    requiresAcceptance: true,
+  ),
+];

@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/constants/api_paths.dart';
 import '../dto/auth_response_dto.dart';
 import '../dto/user_dto.dart';
+import '../../../legal/domain/entities/legal.dart';
 
 /// Talks directly to the Identity service's REST endpoints. Never throws
 /// [AppException]s itself — callers (the repository) are responsible for
@@ -37,6 +38,7 @@ class AuthRemoteDataSource {
     required String lastName,
     required String email,
     required String password,
+    required List<LegalConsentSelection> legalConsents,
     String? phoneNumber,
   }) async {
     await _rawDio.post<Map<String, dynamic>>(
@@ -47,6 +49,10 @@ class AuthRemoteDataSource {
         'email': email,
         'password': password,
         'phoneNumber': phoneNumber,
+        'legalConsents': [
+          for (final consent in legalConsents)
+            {'type': consent.type, 'version': consent.version},
+        ],
       },
     );
   }

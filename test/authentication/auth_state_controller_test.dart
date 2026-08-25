@@ -5,6 +5,7 @@ import 'package:dogplatform/features/authentication/application/auth_state_contr
 import 'package:dogplatform/features/authentication/application/providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:dogplatform/features/legal/domain/entities/legal.dart';
 
 import '../helpers/fake_auth_repository.dart';
 
@@ -66,6 +67,9 @@ void main() {
           lastName: 'User',
           email: 'dog@example.com',
           password: 'password',
+          legalConsents: const [
+            LegalConsentSelection(type: 'TermsAndConditions', version: '1.0'),
+          ],
           phoneNumber: null,
         );
 

@@ -12,6 +12,7 @@ import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_data_source.dart';
 import '../dto/auth_response_dto.dart';
+import '../../../legal/domain/entities/legal.dart';
 
 /// Concrete [AuthRepository] backed by [AuthRemoteDataSource] and
 /// [SecureTokenStorage]. Responsible for persisting/clearing tokens as a
@@ -42,14 +43,16 @@ class AuthRepositoryImpl implements AuthRepository {
     required String lastName,
     required String email,
     required String password,
+    required List<LegalConsentSelection> legalConsents,
     String? phoneNumber,
   }) {
-    return _runVoidCall(
+    return _runRegistrationCall(
       () => _remoteDataSource.register(
         firstName: firstName,
         lastName: lastName,
         email: email,
         password: password,
+        legalConsents: legalConsents,
         phoneNumber: phoneNumber,
       ),
     );
@@ -164,6 +167,31 @@ class AuthRepositoryImpl implements AuthRepository {
     } on DioException catch (e) {
       return Result.failure(
         mapExceptionToFailure(mapDioExceptionToAppException(e)),
+      );
+    } catch (_) {
+      return const Result.failure(UnknownFailure());
+    }
+  }
+
+  Future<Result<void>> _runRegistrationCall(
+    Future<void> Function() call,
+  ) async {
+    try {
+      await call();
+      return const Result.success(null);
+    } on DioException catch (error) {
+      final data = error.response?.data;
+      final code = data is Map ? data['code']?.toString() : null;
+      final message = switch (code) {
+        'LEGAL_CONSENT_REQUIRED' => 'Debes aceptar los documentos requeridos.',
+        'LEGAL_DOCUMENT_VERSION_INVALID' =>
+          'Los documentos legales se actualizaron. Revísalos nuevamente.',
+        'LEGAL_DOCUMENT_NOT_FOUND' => 'No pudimos cargar el documento.',
+        _ => null,
+      };
+      if (message != null) return Result.failure(ValidationFailure(message));
+      return Result.failure(
+        mapExceptionToFailure(mapDioExceptionToAppException(error)),
       );
     } catch (_) {
       return const Result.failure(UnknownFailure());

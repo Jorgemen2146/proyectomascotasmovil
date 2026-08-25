@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:dogplatform/core/constants/api_paths.dart';
 import 'package:dogplatform/features/authentication/data/datasources/auth_remote_data_source.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:dogplatform/features/legal/domain/entities/legal.dart';
 
 void main() {
   late _RecordingDio rawDio;
@@ -23,6 +24,10 @@ void main() {
       lastName: 'Test',
       email: 'jorge@test.com',
       password: 'Testing123',
+      legalConsents: const [
+        LegalConsentSelection(type: 'TermsAndConditions', version: '2.1'),
+        LegalConsentSelection(type: 'PrivacyPolicy', version: '3.0'),
+      ],
       phoneNumber: null,
     );
 
@@ -34,6 +39,10 @@ void main() {
       'email': 'jorge@test.com',
       'password': 'Testing123',
       'phoneNumber': null,
+      'legalConsents': [
+        {'type': 'TermsAndConditions', 'version': '2.1'},
+        {'type': 'PrivacyPolicy', 'version': '3.0'},
+      ],
     });
   });
 

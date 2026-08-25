@@ -4,6 +4,7 @@ import 'package:dogplatform/features/authentication/data/dto/auth_response_dto.d
 import 'package:dogplatform/features/authentication/data/repositories/auth_repository_impl.dart';
 import 'package:dogplatform/core/storage/secure_token_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:dogplatform/features/legal/domain/entities/legal.dart';
 
 void main() {
   test('Register y Verify Email no guardan tokens', () async {
@@ -18,6 +19,9 @@ void main() {
       lastName: 'User',
       email: 'dog@example.com',
       password: 'password',
+      legalConsents: const [
+        LegalConsentSelection(type: 'TermsAndConditions', version: '1.0'),
+      ],
       phoneNumber: null,
     );
     final verify = await repository.verifyEmail(
@@ -72,6 +76,7 @@ class _FakeRemoteDataSource extends AuthRemoteDataSource {
     required String lastName,
     required String email,
     required String password,
+    required List<LegalConsentSelection> legalConsents,
     String? phoneNumber,
   }) async {}
 

@@ -3,6 +3,7 @@ import 'package:dogplatform/core/result/result.dart';
 import 'package:dogplatform/core/services/photo_picker_service.dart';
 import 'package:dogplatform/features/authentication/domain/entities/user.dart';
 import 'package:dogplatform/features/authentication/domain/repositories/auth_repository.dart';
+import 'package:dogplatform/features/legal/domain/entities/legal.dart';
 
 class FakeAuthRepository implements AuthRepository {
   Result<User> loginResult = const Result.success(
@@ -26,6 +27,7 @@ class FakeAuthRepository implements AuthRepository {
   String? lastLastName;
   String? lastPhoneNumber;
   SelectedPhoto? lastProfilePhoto;
+  List<LegalConsentSelection> lastLegalConsents = const [];
   final List<String> profileEvents = [];
 
   @override
@@ -44,6 +46,7 @@ class FakeAuthRepository implements AuthRepository {
     required String lastName,
     required String email,
     required String password,
+    required List<LegalConsentSelection> legalConsents,
     String? phoneNumber,
   }) async {
     registerCalls++;
@@ -51,6 +54,7 @@ class FakeAuthRepository implements AuthRepository {
     lastLastName = lastName;
     lastEmail = email;
     lastPhoneNumber = phoneNumber;
+    lastLegalConsents = legalConsents;
     return registerResult;
   }
 

@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/session_events.dart';
 import '../../../core/errors/app_failure.dart';
 import '../domain/entities/user.dart';
+import '../../legal/domain/entities/legal.dart';
+import '../../legal/application/legal_data_providers.dart';
 import 'auth_state.dart';
 import 'providers.dart';
 
@@ -22,6 +24,7 @@ class AuthStateController extends Notifier<AuthState> {
   }
 
   void _handleSessionExpired() {
+    clearUserLegalState(ref);
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
@@ -73,6 +76,7 @@ class AuthStateController extends Notifier<AuthState> {
         .call(email: email, password: password);
     return result.when(
       success: (user) {
+        clearUserLegalState(ref);
         state = AuthState(status: AuthStatus.authenticated, user: user);
         return LoginOutcome.success;
       },
@@ -93,6 +97,7 @@ class AuthStateController extends Notifier<AuthState> {
     required String lastName,
     required String email,
     required String password,
+    required List<LegalConsentSelection> legalConsents,
     String? phoneNumber,
   }) async {
     state = state.copyWith(errorMessage: null);
@@ -103,6 +108,7 @@ class AuthStateController extends Notifier<AuthState> {
           lastName: lastName,
           email: email,
           password: password,
+          legalConsents: legalConsents,
           phoneNumber: phoneNumber,
         );
     return result.when(
@@ -119,6 +125,7 @@ class AuthStateController extends Notifier<AuthState> {
 
   Future<void> logout() async {
     await ref.read(logoutUseCaseProvider).call();
+    clearUserLegalState(ref);
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 

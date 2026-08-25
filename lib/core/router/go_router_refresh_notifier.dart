@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/authentication/application/auth_state_controller.dart';
+import '../../features/legal/application/providers.dart';
 
 /// Bridges Riverpod's [authStateControllerProvider] changes into a
 /// [Listenable], as required by GoRouter's `refreshListenable` parameter,
@@ -12,6 +13,9 @@ class GoRouterRefreshNotifier extends ChangeNotifier {
       if (previous?.status != next.status) {
         notifyListeners();
       }
+    });
+    ref.listen(legalGateProvider, (previous, next) {
+      if (previous != next) notifyListeners();
     });
   }
 }

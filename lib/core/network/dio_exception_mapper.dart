@@ -61,7 +61,7 @@ String? _extractMessage(dynamic data) {
 
 String? _extractErrorCode(dynamic data) {
   if (data is Map<String, dynamic>) {
-    return (data['errorId'] ?? data['error'])?.toString();
+    return (data['code'] ?? data['errorId'] ?? data['error'])?.toString();
   }
   return null;
 }

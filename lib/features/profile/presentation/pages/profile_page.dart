@@ -77,12 +77,17 @@ class ProfilePage extends ConsumerWidget {
                   _ProfileOption(
                     icon: Icons.shield_outlined,
                     label: 'Privacidad',
-                    onTap: () => _pending(context),
+                    onTap: () => context.push(AppRoutes.legalPrivacy),
                   ),
                   _ProfileOption(
                     icon: Icons.description_outlined,
                     label: 'Términos y condiciones',
-                    onTap: () => _pending(context),
+                    onTap: () => context.push(AppRoutes.legalTerms),
+                  ),
+                  _ProfileOption(
+                    icon: Icons.history_outlined,
+                    label: 'Historial de aceptaciones',
+                    onTap: () => context.push(AppRoutes.legalHistory),
                     isLast: true,
                   ),
                 ],
