@@ -9,6 +9,8 @@ import '../../features/authentication/presentation/pages/splash_page.dart';
 import '../../features/authentication/presentation/pages/verify_email_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/health/presentation/pages/health_page.dart';
+import '../../features/genealogy/presentation/pages/genealogy_page.dart';
+import '../../features/genealogy/presentation/pages/genealogy_invitations_page.dart';
 import '../../features/notifications/presentation/pages/notifications_page.dart';
 import '../../features/pets/presentation/pages/pet_detail_page.dart';
 import '../../features/pets/presentation/pages/pet_form_page.dart';
@@ -97,7 +99,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.genealogy,
-        builder: (context, state) => const PlaceholderPage(title: 'Genealogy'),
+        builder: (context, state) =>
+            GenealogyPage(initialPetId: state.uri.queryParameters['petId']),
+      ),
+      GoRoute(
+        path: AppRoutes.genealogyInvitations,
+        builder: (context, state) => GenealogyInvitationsPage(
+          invitationToken: state.uri.queryParameters['token'],
+        ),
       ),
       GoRoute(
         path: AppRoutes.matching,

@@ -18,8 +18,12 @@ class AppRoutes {
   static const String profile = '/profile';
   static const String editProfile = '/profile/edit';
 
-  // Placeholder-only routes for upcoming features.
   static const String genealogy = '/genealogy';
+  static String genealogyForPet(String petId) =>
+      Uri(path: genealogy, queryParameters: {'petId': petId}).toString();
+  static const String genealogyInvitations = '/genealogy/invitations';
+
+  // Placeholder-only route for an upcoming feature.
   static const String matching = '/matching';
   static const String health = '/health';
   static String healthForPet(String petId) =>

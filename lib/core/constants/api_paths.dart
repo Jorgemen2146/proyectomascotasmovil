@@ -25,4 +25,21 @@ class ApiPaths {
       '${petPhotos(petId)}/$photoId';
   static String mainPetPhoto(String petId, String photoId) =>
       '${petPhoto(petId, photoId)}/main';
+
+  static String genealogyParents(String petId) =>
+      '/api/v1/genealogy/pets/$petId/parents';
+  static String genealogyTree(String petId) =>
+      '/api/v1/genealogy/pets/$petId/tree';
+  static String genealogyRelationship(String id) =>
+      '/api/v1/genealogy/relationships/$id';
+  static const genealogyInvitations = '/api/v1/genealogy/invitations';
+  static const genealogyMyInvitations = '$genealogyInvitations/mine';
+  static String genealogyInvitation(String token) =>
+      '$genealogyInvitations/$token';
+  static String genealogyAcceptInvitation(String token) =>
+      '${genealogyInvitation(token)}/accept';
+  static String genealogyRejectInvitation(String token) =>
+      '${genealogyInvitation(token)}/reject';
+  static String genealogyCancelInvitation(String id) =>
+      '$genealogyInvitations/$id/cancel';
 }
