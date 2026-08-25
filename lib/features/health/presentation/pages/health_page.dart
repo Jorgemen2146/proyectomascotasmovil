@@ -20,7 +20,9 @@ import '../../domain/entities/health.dart';
 import 'vaccination_form_page.dart';
 
 class HealthPage extends ConsumerStatefulWidget {
-  const HealthPage({super.key});
+  const HealthPage({super.key, this.initialPetId});
+
+  final String? initialPetId;
 
   @override
   ConsumerState<HealthPage> createState() => _HealthPageState();
@@ -28,6 +30,12 @@ class HealthPage extends ConsumerStatefulWidget {
 
 class _HealthPageState extends ConsumerState<HealthPage> {
   String? _selectedPetId;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedPetId = widget.initialPetId;
+  }
 
   @override
   Widget build(BuildContext context) {

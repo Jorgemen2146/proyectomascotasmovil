@@ -8,12 +8,12 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/app_bottom_nav_bar.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_state.dart';
-import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/app_top_bar.dart';
 import '../../../../core/widgets/fade_slide_in.dart';
 import '../../../../core/widgets/responsive_center.dart';
 import '../../../../core/widgets/section_title.dart';
 import '../../../authentication/application/auth_state_controller.dart';
+import '../../../notifications/presentation/widgets/notification_bell.dart';
 import '../../../pets/application/providers.dart';
 import '../widgets/pet_summary_card.dart';
 
@@ -82,13 +82,7 @@ class HomePage extends ConsumerWidget {
                   subtitle: firstPetName == null
                       ? '¿Cómo están tus mascotas hoy?'
                       : '¿Cómo está $firstPetName hoy?',
-                  trailing: IconButton(
-                    icon: const Icon(AppIcons.notification),
-                    onPressed: () => AppSnackBar.showInfo(
-                      context,
-                      'No tienes notificaciones nuevas.',
-                    ),
-                  ),
+                  trailing: const NotificationBell(),
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),

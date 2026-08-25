@@ -5,6 +5,9 @@ import 'core/config/app_config.dart';
 import 'core/config/environment.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'features/authentication/application/auth_state.dart';
+import 'features/authentication/application/auth_state_controller.dart';
+import 'features/notifications/application/providers.dart';
 
 /// Entry point. The active environment is selected via
 /// `--dart-define=ENV=dev|qa|prod` (defaults to dev when not provided).
@@ -15,11 +18,41 @@ void main() {
   runApp(const ProviderScope(child: DogPlatformApp()));
 }
 
-class DogPlatformApp extends ConsumerWidget {
+class DogPlatformApp extends ConsumerStatefulWidget {
   const DogPlatformApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DogPlatformApp> createState() => _DogPlatformAppState();
+}
+
+class _DogPlatformAppState extends ConsumerState<DogPlatformApp>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    if (ref.read(authStateControllerProvider).status ==
+        AuthStatus.authenticated) {
+      ref
+          .read(notificationsControllerProvider.notifier)
+          .refreshUnreadCount(silent: true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.watch(notificationsSessionCoordinatorProvider);
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
