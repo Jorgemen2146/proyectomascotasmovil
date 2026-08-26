@@ -101,6 +101,10 @@ class _PetDetailContent extends ConsumerWidget {
                       context.push(AppRoutes.genealogyForPet(pet.petId));
                       return;
                     }
+                    if (label == 'Matching') {
+                      context.push(AppRoutes.matchingForPet(pet.petId));
+                      return;
+                    }
                     AppSnackBar.showInfo(
                       context,
                       '$label estará disponible próximamente.',

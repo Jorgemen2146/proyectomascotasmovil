@@ -17,6 +17,14 @@ class ApiPaths {
   static const String legalStatus = '/api/v1/auth/me/legal-status';
   static const String legalConsents = '/api/v1/auth/me/legal-consents';
 
+  static const String matchingProfiles = '/api/v1/matching/profiles';
+  static const String matchingSearch = '/api/v1/matching/search';
+  static const String matchingPets = '/api/v1/matching/pets';
+  static const String matchingRequests = '/api/v1/matching/requests';
+  static const String matchingMatches = '/api/v1/matching/matches';
+  static const String matchingBreedingIntents =
+      '/api/v1/matching/breeding-intents';
+
   static const String pets = '/api/v1/pets';
   static const String myPets = '/api/v1/pets/mine';
   static const String species = '/api/v1/species';

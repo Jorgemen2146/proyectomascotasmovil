@@ -27,8 +27,17 @@ class AppRoutes {
       Uri(path: genealogy, queryParameters: {'petId': petId}).toString();
   static const String genealogyInvitations = '/genealogy/invitations';
 
-  // Placeholder-only route for an upcoming feature.
   static const String matching = '/matching';
+  static String matchingForPet(String petId) =>
+      Uri(path: matching, queryParameters: {'petId': petId}).toString();
+  static const String matchingRequests = '/matching/requests';
+  static const String matchingMatches = '/matching/matches';
+  static String matchingCandidate(String sourcePetId, String candidatePetId) =>
+      Uri(
+        path: '/matching/pets/$candidatePetId',
+        queryParameters: {'sourcePetId': sourcePetId},
+      ).toString();
+  static String matchingMatch(String matchId) => '/matching/matches/$matchId';
   static const String health = '/health';
   static String healthForPet(String petId) =>
       Uri(path: health, queryParameters: {'petId': petId}).toString();

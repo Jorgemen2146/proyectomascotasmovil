@@ -3,6 +3,7 @@ import 'package:dogplatform/core/theme/app_theme.dart';
 import 'package:dogplatform/features/notifications/application/providers.dart';
 import 'package:dogplatform/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:dogplatform/features/notifications/presentation/widgets/notification_bell.dart';
+import 'package:dogplatform/features/notifications/domain/entities/notification.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -134,6 +135,109 @@ void main() {
     expect(repository.markReadCalls, 1);
     expect(container.read(notificationsControllerProvider).unreadCount, 0);
   });
+
+  testWidgets('notificación Matching abre detail solo con matchId', (
+    tester,
+  ) async {
+    final repository = FakeNotificationsRepository()
+      ..items = [
+        AppNotification(
+          notificationId: 'matching-1',
+          type: 'MatchingRequestAccepted',
+          title: '¡Es un match!',
+          message: 'Solicitud aceptada',
+          status: 'Pending',
+          isRead: true,
+          createdAtUtc: DateTime.utc(2026, 8, 25),
+          metadata: const NotificationMetadata(matchId: 'match-1'),
+        ),
+      ];
+    final container = _container(repository);
+    addTearDown(container.dispose);
+    final router = GoRouter(
+      initialLocation: '/notifications',
+      routes: [
+        GoRoute(
+          path: '/notifications',
+          builder: (_, _) => const NotificationsPage(),
+        ),
+        GoRoute(
+          path: '/matching/matches/:matchId',
+          builder: (_, state) =>
+              Scaffold(body: Text('Match ${state.pathParameters['matchId']}')),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('notification-matching-1')));
+    await tester.pumpAndSettle();
+    expect(find.text('Match match-1'), findsOneWidget);
+  });
+
+  for (final type in [
+    'MatchingBreedingIntentProposed',
+    'MatchingBreedingIntentAccepted',
+    'MatchingBreedingIntentCancelled',
+  ]) {
+    testWidgets('$type abre MatchDetail con matchId', (tester) async {
+      final repository = FakeNotificationsRepository()
+        ..items = [
+          AppNotification(
+            notificationId: type,
+            type: type,
+            title: 'Posible camada',
+            message: 'Estado actualizado',
+            status: 'Pending',
+            isRead: true,
+            createdAtUtc: DateTime.utc(2026, 8, 25),
+            metadata: const NotificationMetadata(
+              matchId: 'match-1',
+              breedingIntentId: 'intent-1',
+            ),
+          ),
+        ];
+      final container = _container(repository);
+      addTearDown(container.dispose);
+      final router = GoRouter(
+        initialLocation: '/notifications',
+        routes: [
+          GoRoute(
+            path: '/notifications',
+            builder: (_, _) => const NotificationsPage(),
+          ),
+          GoRoute(
+            path: '/matching/matches/:matchId',
+            builder: (_, state) => Scaffold(
+              body: Text('Match ${state.pathParameters['matchId']}'),
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(
+            theme: AppTheme.light,
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(Key('notification-$type')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Match match-1'), findsOneWidget);
+    });
+  }
 }
 
 ProviderContainer _container(FakeNotificationsRepository repository) =>

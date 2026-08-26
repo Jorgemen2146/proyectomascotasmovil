@@ -12,6 +12,11 @@ import '../../features/legal/application/providers.dart';
 import '../../features/legal/presentation/pages/legal_document_page.dart';
 import '../../features/legal/presentation/pages/legal_history_page.dart';
 import '../../features/legal/presentation/pages/legal_update_page.dart';
+import '../../features/matching/presentation/pages/matching_candidate_page.dart';
+import '../../features/matching/presentation/pages/matching_match_detail_page.dart';
+import '../../features/matching/presentation/pages/matching_matches_page.dart';
+import '../../features/matching/presentation/pages/matching_page.dart';
+import '../../features/matching/presentation/pages/matching_requests_page.dart';
 import '../../features/health/presentation/pages/health_page.dart';
 import '../../features/genealogy/presentation/pages/genealogy_page.dart';
 import '../../features/genealogy/presentation/pages/genealogy_invitations_page.dart';
@@ -22,7 +27,6 @@ import '../../features/pets/presentation/pages/pet_photos_page.dart';
 import '../../features/pets/presentation/pages/pets_page.dart';
 import '../../features/profile/presentation/pages/edit_profile_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
-import '../widgets/placeholder_page.dart';
 import 'app_routes.dart';
 import 'go_router_refresh_notifier.dart';
 
@@ -132,7 +136,33 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.matching,
-        builder: (context, state) => const PlaceholderPage(title: 'Matching'),
+        builder: (context, state) =>
+            MatchingPage(initialPetId: state.uri.queryParameters['petId']),
+        routes: [
+          GoRoute(
+            path: 'pets/:candidatePetId',
+            builder: (context, state) => MatchingCandidatePage(
+              sourcePetId: state.uri.queryParameters['sourcePetId']!,
+              candidatePetId: state.pathParameters['candidatePetId']!,
+            ),
+          ),
+          GoRoute(
+            path: 'requests',
+            builder: (context, state) => const MatchingRequestsPage(),
+          ),
+          GoRoute(
+            path: 'matches',
+            builder: (context, state) => const MatchingMatchesPage(),
+            routes: [
+              GoRoute(
+                path: ':matchId',
+                builder: (context, state) => MatchingMatchDetailPage(
+                  matchId: state.pathParameters['matchId']!,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       GoRoute(
         path: AppRoutes.health,

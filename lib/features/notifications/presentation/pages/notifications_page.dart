@@ -161,9 +161,19 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
         return;
       }
     }
+    if (!mounted) return;
     final petId = notification.petId;
-    if (!mounted || !notification.isVaccination || petId == null) return;
-    context.push(AppRoutes.healthForPet(petId));
+    if (notification.isVaccination && petId != null) {
+      context.push(AppRoutes.healthForPet(petId));
+      return;
+    }
+    if (!notification.isMatching) return;
+    final matchId = notification.metadata?.matchId;
+    if (matchId != null && matchId.isNotEmpty) {
+      context.push(AppRoutes.matchingMatch(matchId));
+      return;
+    }
+    context.push(AppRoutes.matchingRequests);
   }
 }
 
@@ -289,6 +299,10 @@ class _NotificationVisual {
 }
 
 _NotificationVisual _visual(String type) => switch (type) {
+  _ when type.startsWith('Matching') => const _NotificationVisual(
+    Icons.favorite_outline,
+    AppColors.primary,
+  ),
   'VaccinationDueSoon' => const _NotificationVisual(
     Icons.event_outlined,
     AppColors.warning,

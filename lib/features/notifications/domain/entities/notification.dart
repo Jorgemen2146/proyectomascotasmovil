@@ -28,6 +28,7 @@ class AppNotification {
   final NotificationMetadata? metadata;
 
   bool get isVaccination => type.startsWith('Vaccination');
+  bool get isMatching => type.startsWith('Matching');
 
   AppNotification copyWith({bool? isRead, DateTime? readAtUtc}) =>
       AppNotification(
@@ -54,6 +55,9 @@ class NotificationMetadata {
     this.nextDueAtUtc,
     this.daysRemaining,
     this.daysOverdue,
+    this.matchRequestId,
+    this.matchId,
+    this.breedingIntentId,
   });
 
   final String? petName;
@@ -62,6 +66,9 @@ class NotificationMetadata {
   final DateTime? nextDueAtUtc;
   final int? daysRemaining;
   final int? daysOverdue;
+  final String? matchRequestId;
+  final String? matchId;
+  final String? breedingIntentId;
 }
 
 class NotificationPageResult {

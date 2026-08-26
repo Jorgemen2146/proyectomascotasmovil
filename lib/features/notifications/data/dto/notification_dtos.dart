@@ -136,6 +136,11 @@ NotificationMetadata? _metadata(String? value) {
       nextDueAtUtc: _date(json['NextDueAtUtc'] ?? json['nextDueAtUtc']),
       daysRemaining: (json['DaysRemaining'] ?? json['daysRemaining']) as int?,
       daysOverdue: (json['DaysOverdue'] ?? json['daysOverdue']) as int?,
+      matchRequestId: (json['MatchRequestId'] ?? json['matchRequestId'])
+          ?.toString(),
+      matchId: (json['MatchId'] ?? json['matchId'])?.toString(),
+      breedingIntentId: (json['BreedingIntentId'] ?? json['breedingIntentId'])
+          ?.toString(),
     );
   } on FormatException {
     return null;

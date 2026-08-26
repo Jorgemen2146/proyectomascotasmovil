@@ -50,4 +50,24 @@ void main() {
     expect(page.hasMore, isFalse);
     expect(count.count, 9);
   });
+
+  test('parsea IDs Matching solo desde metadata backend', () {
+    final item = NotificationDto.fromJson({
+      'notificationId': 'matching-1',
+      'type': 'MatchingRequestAccepted',
+      'title': 'Match',
+      'message': 'Solicitud aceptada',
+      'petId': 'pet-1',
+      'vaccineId': null,
+      'status': 'Pending',
+      'isRead': false,
+      'readAtUtc': null,
+      'createdAtUtc': '2026-08-25T10:00:00Z',
+      'metadataJson': '{"MatchRequestId":"request-1","MatchId":"match-1"}',
+    }).toDomain();
+
+    expect(item.isMatching, isTrue);
+    expect(item.metadata?.matchRequestId, 'request-1');
+    expect(item.metadata?.matchId, 'match-1');
+  });
 }
