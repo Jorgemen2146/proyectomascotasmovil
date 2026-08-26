@@ -90,6 +90,7 @@ class MatchingCandidate {
     required this.relationshipStatus,
     required this.photoUrls,
     required this.disclaimer,
+    this.hasPedigree = false,
     this.mainPhotoUrl,
     this.pedigreeCompletenessPercentage,
     this.relationshipType,
@@ -122,6 +123,7 @@ class MatchingCandidate {
   final String? relationshipDescription;
   final List<String> photoUrls;
   final String disclaimer;
+  final bool hasPedigree;
 
   bool get hasKnownRelationship => relationshipStatus == 'Related';
 }

@@ -33,6 +33,8 @@ class MatchingCandidateDto {
   const MatchingCandidateDto(this.value);
   factory MatchingCandidateDto.fromJson(Map<String, dynamic> json) {
     final breakdown = json['compatibilityBreakdown'] as Map<String, dynamic>;
+    final pedigreeCompleteness =
+        (json['pedigreeCompletenessPercentage'] as num?)?.toDouble();
     return MatchingCandidateDto(
       MatchingCandidate(
         petId: json['petId'] as String,
@@ -50,8 +52,9 @@ class MatchingCandidateDto {
           genealogyScore: breakdown['genealogyScore'] as int,
           healthScore: breakdown['healthScore'] as int?,
         ),
-        pedigreeCompletenessPercentage:
-            (json['pedigreeCompletenessPercentage'] as num?)?.toDouble(),
+        pedigreeCompletenessPercentage: pedigreeCompleteness,
+        hasPedigree:
+            json['hasPedigree'] as bool? ?? pedigreeCompleteness != null,
         relationshipType: _enumName(
           json['relationshipType'],
           _relationshipTypes,

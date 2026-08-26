@@ -13,6 +13,7 @@ class FakeMatchingRepository implements MatchingRepository {
   BreedingIntent? breedingIntent;
   final calls = <String>[];
   MatchingProfileDraft? lastProfileDraft;
+  MatchingSearchFilters? lastSearchFilters;
   String? lastMessage;
   bool? lastSharePhone;
 
@@ -33,7 +34,11 @@ class FakeMatchingRepository implements MatchingRepository {
   @override
   Future<Result<List<MatchingCandidate>>> search(
     MatchingSearchFilters filters,
-  ) async => Result.success(candidates);
+  ) async {
+    calls.add('search');
+    lastSearchFilters = filters;
+    return Result.success(candidates);
+  }
 
   @override
   Future<Result<MatchingCandidate>> getCandidate(
@@ -170,6 +175,7 @@ final sampleCandidate = MatchingCandidate(
   relationshipDescription: 'Primos registrados',
   photoUrls: const ['/photos/luna.jpg'],
   disclaimer: 'Evaluación informativa.',
+  hasPedigree: true,
 );
 
 const requesterPet = PublicMatchingPet(

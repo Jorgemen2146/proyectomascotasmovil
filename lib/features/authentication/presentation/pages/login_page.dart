@@ -69,8 +69,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         body: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
-              final needsScroll = keyboardOpen || constraints.maxHeight < 820;
+              final mediaQuery = MediaQuery.of(context);
+              final keyboardOpen = mediaQuery.viewInsets.bottom > 0;
+              final layout = _LoginLayout.resolve(
+                height: constraints.maxHeight,
+                width: constraints.maxWidth,
+                textScale: mediaQuery.textScaler.scale(1),
+              );
+              final needsScroll =
+                  keyboardOpen || constraints.maxHeight < layout.minimumHeight;
               final content = Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 480),
@@ -81,10 +88,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const _LoginHeader(),
+                          _LoginHeader(layout: layout),
                           Transform.translate(
-                            offset: const Offset(0, -26),
+                            offset: Offset(0, -layout.overlap),
                             child: _LoginForm(
+                              layout: layout,
                               emailController: _emailController,
                               passwordController: _passwordController,
                               isSubmitting: _isSubmitting,
@@ -116,13 +124,131 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 }
 
+class _LoginLayout {
+  const _LoginLayout({
+    required this.headerHeight,
+    required this.minimumHeight,
+    required this.overlap,
+    required this.formTopPadding,
+    required this.formBottomPadding,
+    required this.fieldGap,
+    required this.beforeForgotGap,
+    required this.beforeButtonGap,
+    required this.beforeDividerGap,
+    required this.afterDividerGap,
+    required this.beforeSecurityGap,
+    required this.beforeAccountGap,
+    required this.loginButtonHeight,
+    required this.socialButtonSize,
+    required this.securityHeight,
+    required this.headerScale,
+    required this.titleSize,
+  });
+
+  factory _LoginLayout.resolve({
+    required double height,
+    required double width,
+    required double textScale,
+  }) {
+    final scaleAllowance = ((textScale - 1).clamp(0, .25) * 80).toDouble();
+    if (height >= 820) {
+      return _LoginLayout(
+        headerHeight: 290,
+        minimumHeight: 790 + scaleAllowance,
+        overlap: 26,
+        formTopPadding: 27,
+        formBottomPadding: 9,
+        fieldGap: 14,
+        beforeForgotGap: 20,
+        beforeButtonGap: 15,
+        beforeDividerGap: 30,
+        afterDividerGap: 15,
+        beforeSecurityGap: 21,
+        beforeAccountGap: 15,
+        loginButtonHeight: 56,
+        socialButtonSize: 64,
+        securityHeight: 64,
+        headerScale: 1,
+        titleSize: 30,
+      );
+    }
+    if (height >= 720) {
+      return _LoginLayout(
+        headerHeight: 235,
+        minimumHeight: 700 + scaleAllowance,
+        overlap: 22,
+        formTopPadding: 20,
+        formBottomPadding: 6,
+        fieldGap: 10,
+        beforeForgotGap: 10,
+        beforeButtonGap: 8,
+        beforeDividerGap: 18,
+        afterDividerGap: 10,
+        beforeSecurityGap: 14,
+        beforeAccountGap: 8,
+        loginButtonHeight: 52,
+        socialButtonSize: 56,
+        securityHeight: 60,
+        headerScale: width < 360 ? .78 : .82,
+        titleSize: 28,
+      );
+    }
+    return _LoginLayout(
+      headerHeight: 185,
+      minimumHeight: 610 + scaleAllowance,
+      overlap: 18,
+      formTopPadding: 12,
+      formBottomPadding: 4,
+      fieldGap: 6,
+      beforeForgotGap: 4,
+      beforeButtonGap: 2,
+      beforeDividerGap: 8,
+      afterDividerGap: 6,
+      beforeSecurityGap: 8,
+      beforeAccountGap: 2,
+      loginButtonHeight: 48,
+      socialButtonSize: 48,
+      securityHeight: 56,
+      headerScale: width < 360 ? .64 : .69,
+      titleSize: 26,
+    );
+  }
+
+  final double headerHeight;
+  final double minimumHeight;
+  final double overlap;
+  final double formTopPadding;
+  final double formBottomPadding;
+  final double fieldGap;
+  final double beforeForgotGap;
+  final double beforeButtonGap;
+  final double beforeDividerGap;
+  final double afterDividerGap;
+  final double beforeSecurityGap;
+  final double beforeAccountGap;
+  final double loginButtonHeight;
+  final double socialButtonSize;
+  final double securityHeight;
+  final double headerScale;
+  final double titleSize;
+
+  double headerTop(double value) => value * headerScale;
+  double headerBottom(double value) => value * headerScale;
+  double headerSide(double value) => value * headerScale;
+  double headerSize(double value) => value * headerScale;
+  double get headerTitleTop => headerHeight < 200 ? 24 : headerTop(61);
+  double get headerSubtitleTop => headerHeight < 200 ? 94 : headerTop(153);
+}
+
 class _LoginHeader extends StatelessWidget {
-  const _LoginHeader();
+  const _LoginHeader({required this.layout});
+
+  final _LoginLayout layout;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 290,
+      height: layout.headerHeight,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -138,19 +264,26 @@ class _LoginHeader extends StatelessWidget {
             ),
           ),
           Positioned(
-            top: 43,
-            right: 25,
+            top: layout.headerTop(43),
+            right: layout.headerSide(25),
             child: Hero(
               tag: 'app-logo',
-              child: Image.asset(_chatHeartAsset, width: 58, height: 58),
+              child: Image.asset(
+                _chatHeartAsset,
+                width: layout.headerSize(58),
+                height: layout.headerSize(58),
+              ),
             ),
           ),
           Positioned(
-            top: 61,
-            left: 28,
+            top: layout.headerTitleTop,
+            left: layout.headerSide(28),
             child: RichText(
               text: TextSpan(
-                style: AppTypography.h1.copyWith(fontSize: 30, height: 1.24),
+                style: AppTypography.h1.copyWith(
+                  fontSize: layout.titleSize,
+                  height: 1.24,
+                ),
                 children: const [
                   TextSpan(text: '¡Bienvenido de\n'),
                   TextSpan(
@@ -163,29 +296,37 @@ class _LoginHeader extends StatelessWidget {
             ),
           ),
           Positioned(
-            top: 153,
-            left: 28,
+            top: layout.headerSubtitleTop,
+            left: layout.headerSide(28),
             child: Text(
               'Inicia sesión para continuar',
               style: AppTypography.bodySecondary.copyWith(fontSize: 14),
             ),
           ),
           Positioned(
-            left: 8,
-            bottom: 18,
-            child: Image.asset(_largePawAsset, width: 61, height: 56),
+            left: layout.headerSide(8),
+            bottom: layout.headerBottom(18),
+            child: Image.asset(
+              _largePawAsset,
+              width: layout.headerSize(61),
+              height: layout.headerSize(56),
+            ),
           ),
           Positioned(
-            left: 125,
-            bottom: 53,
-            child: Image.asset(_smallPawAsset, width: 40, height: 37),
+            left: layout.headerSide(125),
+            bottom: layout.headerBottom(53),
+            child: Image.asset(
+              _smallPawAsset,
+              width: layout.headerSize(40),
+              height: layout.headerSize(37),
+            ),
           ),
           Positioned(
-            right: -9,
-            bottom: -5,
+            right: -layout.headerSide(9),
+            bottom: -layout.headerBottom(5),
             child: Container(
-              width: 170,
-              height: 170,
+              width: layout.headerSize(170),
+              height: layout.headerSize(170),
               decoration: const BoxDecoration(
                 color: Color(0xFFDDEBFF),
                 shape: BoxShape.circle,
@@ -193,10 +334,10 @@ class _LoginHeader extends StatelessWidget {
             ),
           ),
           Positioned(
-            right: -2,
-            bottom: 6,
-            width: 193,
-            height: 181,
+            right: -layout.headerSide(2),
+            bottom: layout.headerBottom(6),
+            width: layout.headerSize(193),
+            height: layout.headerSize(181),
             child: Image.asset(
               _loginPetsAsset,
               alignment: Alignment.bottomCenter,
@@ -212,12 +353,14 @@ class _LoginHeader extends StatelessWidget {
 
 class _LoginForm extends StatelessWidget {
   const _LoginForm({
+    required this.layout,
     required this.emailController,
     required this.passwordController,
     required this.isSubmitting,
     required this.onSubmit,
   });
 
+  final _LoginLayout layout;
   final TextEditingController emailController;
   final TextEditingController passwordController;
   final bool isSubmitting;
@@ -226,7 +369,12 @@ class _LoginForm extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 27, 24, 9),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        layout.formTopPadding,
+        24,
+        layout.formBottomPadding,
+      ),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
@@ -236,12 +384,12 @@ class _LoginForm extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           AppEmailField(controller: emailController),
-          const SizedBox(height: 14),
+          SizedBox(height: layout.fieldGap),
           AppPasswordField(
             controller: passwordController,
             textInputAction: TextInputAction.done,
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: layout.beforeForgotGap),
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
@@ -250,13 +398,14 @@ class _LoginForm extends StatelessWidget {
               child: const Text('¿Olvidaste tu contraseña?'),
             ),
           ),
-          const SizedBox(height: 15),
+          SizedBox(height: layout.beforeButtonGap),
           _LoginButton(
             label: 'Iniciar sesión',
+            height: layout.loginButtonHeight,
             isLoading: isSubmitting,
             onPressed: onSubmit,
           ),
-          const SizedBox(height: 30),
+          SizedBox(height: layout.beforeDividerGap),
           Row(
             children: [
               const Expanded(child: Divider()),
@@ -270,25 +419,32 @@ class _LoginForm extends StatelessWidget {
               const Expanded(child: Divider()),
             ],
           ),
-          const SizedBox(height: 15),
-          const _SocialLoginRow(),
-          const SizedBox(height: 21),
-          const _SecurityNotice(),
-          const SizedBox(height: 15),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text('¿No tienes cuenta? ', style: AppTypography.bodySecondary),
-              TextButton(
-                onPressed: () => context.push(AppRoutes.register),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 3),
-                  minimumSize: const Size(0, 40),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text('Crear cuenta'),
+          SizedBox(height: layout.afterDividerGap),
+          _SocialLoginRow(buttonSize: layout.socialButtonSize),
+          SizedBox(height: layout.beforeSecurityGap),
+          _SecurityNotice(height: layout.securityHeight),
+          SizedBox(height: layout.beforeAccountGap),
+          Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                children: [
+                  Text(
+                    '¿No tienes cuenta? ',
+                    style: AppTypography.bodySecondary,
+                  ),
+                  TextButton(
+                    onPressed: () => context.push(AppRoutes.register),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      minimumSize: const Size(0, 40),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: const Text('Crear cuenta'),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ],
       ),
@@ -299,11 +455,13 @@ class _LoginForm extends StatelessWidget {
 class _LoginButton extends StatelessWidget {
   const _LoginButton({
     required this.label,
+    required this.height,
     required this.isLoading,
     required this.onPressed,
   });
 
   final String label;
+  final double height;
   final bool isLoading;
   final VoidCallback onPressed;
 
@@ -325,7 +483,7 @@ class _LoginButton extends StatelessWidget {
             onTap: isLoading ? null : onPressed,
             borderRadius: BorderRadius.circular(14),
             child: SizedBox(
-              height: 56,
+              height: height,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
@@ -363,7 +521,9 @@ class _LoginButton extends StatelessWidget {
 }
 
 class _SocialLoginRow extends StatelessWidget {
-  const _SocialLoginRow();
+  const _SocialLoginRow({required this.buttonSize});
+
+  final double buttonSize;
 
   @override
   Widget build(BuildContext context) {
@@ -375,6 +535,7 @@ class _SocialLoginRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _SocialButton(
+          size: buttonSize,
           onTap: showComingSoon,
           child: const SizedBox(
             width: 29,
@@ -384,11 +545,13 @@ class _SocialLoginRow extends StatelessWidget {
         ),
         const SizedBox(width: 38),
         _SocialButton(
+          size: buttonSize,
           onTap: showComingSoon,
           child: const Icon(Icons.apple_rounded, size: 27),
         ),
         const SizedBox(width: 38),
         _SocialButton(
+          size: buttonSize,
           onTap: showComingSoon,
           child: const Icon(
             Icons.facebook_rounded,
@@ -402,10 +565,15 @@ class _SocialLoginRow extends StatelessWidget {
 }
 
 class _SocialButton extends StatelessWidget {
-  const _SocialButton({required this.onTap, required this.child});
+  const _SocialButton({
+    required this.onTap,
+    required this.child,
+    required this.size,
+  });
 
   final VoidCallback onTap;
   final Widget child;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
@@ -415,7 +583,11 @@ class _SocialButton extends StatelessWidget {
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
-        child: SizedBox(width: 64, height: 64, child: Center(child: child)),
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: Center(child: child),
+        ),
       ),
     );
   }
@@ -458,12 +630,14 @@ class _GoogleMarkPainter extends CustomPainter {
 }
 
 class _SecurityNotice extends StatelessWidget {
-  const _SecurityNotice();
+  const _SecurityNotice({required this.height});
+
+  final double height;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 64,
+      height: height,
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
         color: AppColors.primary.withValues(alpha: 0.055),
@@ -487,15 +661,23 @@ class _SecurityNotice extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Tu información está segura',
-                  style: AppTypography.body.copyWith(
-                    fontWeight: FontWeight.w600,
+                FittedBox(
+                  alignment: Alignment.centerLeft,
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    'Tu información está segura',
+                    style: AppTypography.body.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-                Text(
-                  'Usamos encriptación de nivel bancario',
-                  style: AppTypography.caption,
+                FittedBox(
+                  alignment: Alignment.centerLeft,
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    'Usamos encriptación de nivel bancario',
+                    style: AppTypography.caption,
+                  ),
                 ),
               ],
             ),

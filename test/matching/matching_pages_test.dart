@@ -42,8 +42,52 @@ void main() {
 
     expect(find.text('Luna'), findsOneWidget);
     expect(find.text('Golden Retriever'), findsOneWidget);
+    expect(find.text('Pedigree'), findsOneWidget);
     expect(find.text('Existe parentesco registrado'), findsOneWidget);
     expect(find.byKey(const Key('matchingFilters')), findsOneWidget);
+    expect(repository.lastSearchFilters?.minimumAgeMonths, isNull);
+    expect(repository.lastSearchFilters?.maximumAgeMonths, isNull);
+  });
+
+  testWidgets('filtros combinan raza y edades opcionales', (tester) async {
+    final repository = FakeMatchingRepository()
+      ..profile = sampleProfile
+      ..candidates = [sampleCandidate];
+    await _largeView(tester);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          matchingRepositoryProvider.overrideWithValue(repository),
+          myPetsProvider.overrideWith((ref) async => [samplePet]),
+          breedsProvider(1).overrideWith(
+            (ref) async => const [
+              Breed(breedId: 7, speciesId: 1, name: 'Golden'),
+            ],
+          ),
+        ],
+        child: const MaterialApp(home: MatchingPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('matchingFilters')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Todas'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Golden').last);
+    await tester.enterText(
+      find.byKey(const Key('matchingFilterMinimumAge')),
+      '18',
+    );
+    await tester.enterText(
+      find.byKey(const Key('matchingFilterMaximumAge')),
+      '72',
+    );
+    await tester.tap(find.text('Aplicar'));
+    await tester.pumpAndSettle();
+
+    expect(repository.lastSearchFilters?.breedId, 7);
+    expect(repository.lastSearchFilters?.minimumAgeMonths, 18);
+    expect(repository.lastSearchFilters?.maximumAgeMonths, 72);
   });
 
   testWidgets('perfil inactivo se activa con consentimiento explícito', (
@@ -68,6 +112,55 @@ void main() {
     await tester.tap(find.text('Guardar y activar'));
     await tester.pumpAndSettle();
     expect(repository.calls, contains('createProfile'));
+    expect(repository.lastProfileDraft?.minimumAgeMonths, isNull);
+    expect(repository.lastProfileDraft?.maximumAgeMonths, isNull);
+  });
+
+  testWidgets('perfil acepta solo edad mínima o solo máxima', (tester) async {
+    final minimumRepository = FakeMatchingRepository();
+    await _pumpInactiveMatching(tester, minimumRepository);
+    await tester.enterText(
+      find.byKey(const Key('matchingProfileMinimumAge')),
+      '18',
+    );
+    await tester.tap(find.text('Guardar y activar'));
+    await tester.pumpAndSettle();
+    expect(minimumRepository.lastProfileDraft?.minimumAgeMonths, 18);
+    expect(minimumRepository.lastProfileDraft?.maximumAgeMonths, isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    final maximumRepository = FakeMatchingRepository();
+    await _pumpInactiveMatching(tester, maximumRepository);
+    await tester.enterText(
+      find.byKey(const Key('matchingProfileMaximumAge')),
+      '72',
+    );
+    await tester.tap(find.text('Guardar y activar'));
+    await tester.pumpAndSettle();
+    expect(maximumRepository.lastProfileDraft?.minimumAgeMonths, isNull);
+    expect(maximumRepository.lastProfileDraft?.maximumAgeMonths, 72);
+  });
+
+  testWidgets('perfil rechaza edad mínima mayor que máxima', (tester) async {
+    final repository = FakeMatchingRepository();
+    await _pumpInactiveMatching(tester, repository);
+    await tester.enterText(
+      find.byKey(const Key('matchingProfileMinimumAge')),
+      '80',
+    );
+    await tester.enterText(
+      find.byKey(const Key('matchingProfileMaximumAge')),
+      '24',
+    );
+    await tester.tap(find.text('Guardar y activar'));
+    await tester.pump();
+
+    expect(
+      find.text('La edad mínima no puede ser mayor que la máxima.'),
+      findsOneWidget,
+    );
+    expect(repository.calls, isNot(contains('createProfile')));
   });
 
   testWidgets(
@@ -261,6 +354,26 @@ Future<void> _pumpMatch(
       ),
     ),
   );
+  await tester.pumpAndSettle();
+}
+
+Future<void> _pumpInactiveMatching(
+  WidgetTester tester,
+  FakeMatchingRepository repository,
+) async {
+  await _largeView(tester);
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        matchingRepositoryProvider.overrideWithValue(repository),
+        myPetsProvider.overrideWith((ref) async => [samplePet]),
+        breedsProvider(1).overrideWith((ref) async => const []),
+      ],
+      child: const MaterialApp(home: MatchingPage()),
+    ),
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('activateMatchingProfile')));
   await tester.pumpAndSettle();
 }
 

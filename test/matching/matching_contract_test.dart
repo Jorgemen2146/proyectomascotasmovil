@@ -54,6 +54,10 @@ void main() {
       recorder.requests[2].queryParameters,
       containsPair('minAgeMonths', 18),
     );
+    expect(
+      recorder.requests[2].queryParameters,
+      containsPair('maxAgeMonths', 72),
+    );
     expect(recorder.requests[3].queryParameters, {'sourcePetId': 'mine'});
     expect(recorder.requests[4].data, {
       'petId': 'mine',
@@ -82,6 +86,19 @@ void main() {
       recorder.requests[13].path,
       '/api/v1/matching/breeding-intents/intent-1/cancel',
     );
+  });
+
+  test('edades de búsqueda vacías se omiten del query', () async {
+    final recorder = _RecordingDio();
+    final source = MatchingRemoteDataSource(recorder.dio);
+
+    await source.search(const MatchingSearchFilters(petId: 'mine'));
+
+    expect(recorder.requests.single.queryParameters, {
+      'petId': 'mine',
+      'pageNumber': 1,
+      'pageSize': 50,
+    });
   });
 }
 
@@ -160,6 +177,7 @@ final _candidate = {
     'healthScore': 10,
   },
   'pedigreeCompletenessPercentage': 90.0,
+  'hasPedigree': true,
   'relationshipType': 9,
   'estimatedOffspringInbreedingCoefficient': .1,
   'genealogyStatus': 0,

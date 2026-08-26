@@ -1,11 +1,13 @@
 import 'package:dogplatform/features/pets/application/providers.dart';
 import 'package:dogplatform/features/pets/domain/entities/pet.dart';
 import 'package:dogplatform/features/pets/presentation/pages/pet_form_page.dart';
+import 'package:dogplatform/features/pets/presentation/pages/pet_detail_page.dart';
 import 'package:dogplatform/features/pets/presentation/pages/pet_photos_page.dart';
 import 'package:dogplatform/features/pets/presentation/pages/pets_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 import '../helpers/fake_pets_repository.dart';
 
@@ -39,6 +41,47 @@ void main() {
     expect(find.text('Todas'), findsOneWidget);
     expect(find.text('Perros'), findsOneWidget);
     expect(find.text('Gatos'), findsOneWidget);
+  });
+
+  testWidgets('tab Salud abre Health con el petId del detalle', (tester) async {
+    final router = GoRouter(
+      initialLocation: '/pets/${samplePetSummary.id}',
+      routes: [
+        GoRoute(
+          path: '/pets/:petId',
+          builder: (_, state) =>
+              PetDetailPage(petId: state.pathParameters['petId']!),
+        ),
+        GoRoute(
+          path: '/health',
+          builder: (_, state) => Scaffold(
+            body: Text('Health ${state.uri.queryParameters['petId']}'),
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          petDetailsProvider(
+            samplePetSummary.id,
+          ).overrideWith((ref) async => samplePetDetails),
+          petPhotosProvider(
+            samplePetSummary.id,
+          ).overrideWith((ref) async => const []),
+          myPetsProvider.overrideWith((ref) async => [samplePetSummary]),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Salud estará disponible próximamente.'), findsNothing);
+    await tester.tap(find.text('Salud'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Health ${samplePetSummary.id}'), findsOneWidget);
   });
 
   testWidgets('formulario evita guardar datos requeridos vacíos', (

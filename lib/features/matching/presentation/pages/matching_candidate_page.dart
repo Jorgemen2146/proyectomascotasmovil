@@ -80,8 +80,7 @@ class _MatchingCandidatePageState extends ConsumerState<MatchingCandidatePage> {
                 Chip(
                   label: Text('${candidate.compatibilityScore}% compatible'),
                 ),
-                if (candidate.pedigreeCompletenessPercentage != null)
-                  const Chip(label: Text('Pedigree')),
+                if (candidate.hasPedigree) const Chip(label: Text('Pedigree')),
               ],
             ),
             if (candidate.hasKnownRelationship) ...[

@@ -97,6 +97,10 @@ class _PetDetailContent extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.lg),
                 _Tabs(
                   onPending: (label) {
+                    if (label == 'Salud') {
+                      context.push(AppRoutes.healthForPet(pet.petId));
+                      return;
+                    }
                     if (label == 'Genealogía') {
                       context.push(AppRoutes.genealogyForPet(pet.petId));
                       return;

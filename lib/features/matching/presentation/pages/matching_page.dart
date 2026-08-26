@@ -116,6 +116,9 @@ class _MatchingPageState extends ConsumerState<MatchingPage> {
   Future<void> _showFilters(PetSummary pet) async {
     var minimumAge = _minimumAgeMonths?.toString() ?? '';
     var maximumAge = _maximumAgeMonths?.toString() ?? '';
+    int? parsedMinimumAge;
+    int? parsedMaximumAge;
+    String? ageError;
     var breed = _breedId;
     final breeds = await ref.read(breedsProvider(pet.speciesId).future);
     if (!mounted) return;
@@ -143,22 +146,35 @@ class _MatchingPageState extends ConsumerState<MatchingPage> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
+                  key: const Key('matchingFilterMinimumAge'),
                   initialValue: minimumAge,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
-                    labelText: 'Edad mínima (meses)',
+                    labelText: 'Edad mínima (opcional)',
+                    helperText: 'Meses',
                   ),
                   onChanged: (value) => minimumAge = value,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
+                  key: const Key('matchingFilterMaximumAge'),
                   initialValue: maximumAge,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
-                    labelText: 'Edad máxima (meses)',
+                    labelText: 'Edad máxima (opcional)',
+                    helperText: 'Meses',
                   ),
                   onChanged: (value) => maximumAge = value,
                 ),
+                if (ageError != null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    ageError!,
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.error,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -168,7 +184,19 @@ class _MatchingPageState extends ConsumerState<MatchingPage> {
               child: const Text('Cancelar'),
             ),
             FilledButton(
-              onPressed: () => Navigator.pop(context, true),
+              onPressed: () {
+                final validation = _validateOptionalAges(
+                  minimumAge,
+                  maximumAge,
+                );
+                if (validation.error case final error?) {
+                  setDialogState(() => ageError = error);
+                  return;
+                }
+                parsedMinimumAge = validation.minimum;
+                parsedMaximumAge = validation.maximum;
+                Navigator.pop(context, true);
+              },
               child: const Text('Aplicar'),
             ),
           ],
@@ -178,8 +206,8 @@ class _MatchingPageState extends ConsumerState<MatchingPage> {
     if (accepted == true) {
       setState(() {
         _breedId = breed;
-        _minimumAgeMonths = int.tryParse(minimumAge);
-        _maximumAgeMonths = int.tryParse(maximumAge);
+        _minimumAgeMonths = parsedMinimumAge;
+        _maximumAgeMonths = parsedMaximumAge;
       });
     }
   }
@@ -337,20 +365,24 @@ class _InactiveProfileState extends ConsumerState<_InactiveProfile> {
             children: [
               Expanded(
                 child: TextField(
+                  key: const Key('matchingProfileMinimumAge'),
                   controller: _minimumAge,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
-                    labelText: 'Edad mínima (meses)',
+                    labelText: 'Edad mínima (opcional)',
+                    helperText: 'Meses',
                   ),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: TextField(
+                  key: const Key('matchingProfileMaximumAge'),
                   controller: _maximumAge,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
-                    labelText: 'Edad máxima (meses)',
+                    labelText: 'Edad máxima (opcional)',
+                    helperText: 'Meses',
                   ),
                 ),
               ),
@@ -379,6 +411,11 @@ class _InactiveProfileState extends ConsumerState<_InactiveProfile> {
   );
 
   Future<void> _activate() async {
+    final ages = _validateOptionalAges(_minimumAge.text, _maximumAge.text);
+    if (ages.error case final error?) {
+      AppSnackBar.showError(context, error);
+      return;
+    }
     final result = await ref
         .read(matchingControllerProvider.notifier)
         .createProfile(
@@ -387,8 +424,8 @@ class _InactiveProfileState extends ConsumerState<_InactiveProfile> {
             lookingForSex: _sex,
             allowMixedBreed: _allowMixedBreed,
             preferredBreedId: _preferredBreedId,
-            minimumAgeMonths: int.tryParse(_minimumAge.text),
-            maximumAgeMonths: int.tryParse(_maximumAge.text),
+            minimumAgeMonths: ages.minimum,
+            maximumAgeMonths: ages.maximum,
             description: _description.text,
           ),
         );
@@ -431,9 +468,9 @@ class _CandidateCard extends StatelessWidget {
               ),
               Text(candidate.breedName, style: AppTypography.bodySecondary),
               Text('${_age(candidate.ageMonths)} · ${_sex(candidate.sex)}'),
-              if (candidate.pedigreeCompletenessPercentage != null) ...[
+              if (candidate.hasPedigree) ...[
                 const SizedBox(height: AppSpacing.sm),
-                const Chip(label: Text('Pedigree registrado')),
+                const Chip(label: Text('Pedigree')),
               ],
               if (candidate.hasKnownRelationship) ...[
                 const SizedBox(height: AppSpacing.sm),
@@ -474,3 +511,36 @@ String _age(int months) => months < 12
     ? '$months meses'
     : '${months ~/ 12} ${months ~/ 12 == 1 ? 'año' : 'años'}';
 String _sex(String value) => value.toUpperCase() == 'F' ? 'Hembra' : 'Macho';
+
+({int? minimum, int? maximum, String? error}) _validateOptionalAges(
+  String minimumText,
+  String maximumText,
+) {
+  final minimumValue = minimumText.trim();
+  final maximumValue = maximumText.trim();
+  final minimum = minimumValue.isEmpty ? null : int.tryParse(minimumValue);
+  final maximum = maximumValue.isEmpty ? null : int.tryParse(maximumValue);
+  if ((minimumValue.isNotEmpty && minimum == null) ||
+      (maximumValue.isNotEmpty && maximum == null)) {
+    return (
+      minimum: null,
+      maximum: null,
+      error: 'Ingresa las edades en meses usando números válidos.',
+    );
+  }
+  if ((minimum != null && minimum < 0) || (maximum != null && maximum < 0)) {
+    return (
+      minimum: minimum,
+      maximum: maximum,
+      error: 'Las edades no pueden ser negativas.',
+    );
+  }
+  if (minimum != null && maximum != null && minimum > maximum) {
+    return (
+      minimum: minimum,
+      maximum: maximum,
+      error: 'La edad mínima no puede ser mayor que la máxima.',
+    );
+  }
+  return (minimum: minimum, maximum: maximum, error: null);
+}
