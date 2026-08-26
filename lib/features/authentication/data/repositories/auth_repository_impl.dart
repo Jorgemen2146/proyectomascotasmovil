@@ -76,6 +76,39 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Result<String>> forgotPassword({required String email}) =>
+      _runPasswordRecoveryCall(
+        () async =>
+            (await _remoteDataSource.forgotPassword(email: email)).message,
+      );
+
+  @override
+  Future<Result<bool>> verifyResetCode({
+    required String email,
+    required String code,
+  }) => _runPasswordRecoveryCall(
+    () async => (await _remoteDataSource.verifyResetCode(
+      email: email,
+      code: code,
+    )).valid,
+  );
+
+  @override
+  Future<Result<void>> resetPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+    required String confirmPassword,
+  }) => _runPasswordRecoveryCall(() async {
+    await _remoteDataSource.resetPassword(
+      email: email,
+      code: code,
+      newPassword: newPassword,
+      confirmPassword: confirmPassword,
+    );
+  });
+
+  @override
   Future<Result<void>> logout() async {
     try {
       final refreshToken = await _tokenStorage.readRefreshToken();
@@ -190,6 +223,37 @@ class AuthRepositoryImpl implements AuthRepository {
         _ => null,
       };
       if (message != null) return Result.failure(ValidationFailure(message));
+      return Result.failure(
+        mapExceptionToFailure(mapDioExceptionToAppException(error)),
+      );
+    } catch (_) {
+      return const Result.failure(UnknownFailure());
+    }
+  }
+
+  Future<Result<T>> _runPasswordRecoveryCall<T>(
+    Future<T> Function() call,
+  ) async {
+    try {
+      return Result.success(await call());
+    } on DioException catch (error) {
+      final data = error.response?.data;
+      final code = data is Map
+          ? (data['error'] ?? data['code'])?.toString()
+          : null;
+      final message = switch (code) {
+        'PASSWORD_RESET_CODE_INVALID' => 'El código ingresado no es correcto.',
+        'PASSWORD_RESET_CODE_EXPIRED' =>
+          'El código ha vencido. Solicita uno nuevo.',
+        'PASSWORD_RESET_CODE_LOCKED' =>
+          'Solicita un nuevo código para continuar.',
+        'PASSWORD_RESET_PASSWORD_INVALID' =>
+          'La nueva contraseña no cumple los requisitos de seguridad.',
+        _ => null,
+      };
+      if (message != null) {
+        return Result.failure(ValidationFailure(message));
+      }
       return Result.failure(
         mapExceptionToFailure(mapDioExceptionToAppException(error)),
       );

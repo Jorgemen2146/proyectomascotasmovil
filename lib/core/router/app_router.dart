@@ -4,9 +4,13 @@ import 'package:go_router/go_router.dart';
 import '../../features/authentication/application/auth_state.dart';
 import '../../features/authentication/application/auth_state_controller.dart';
 import '../../features/authentication/presentation/pages/login_page.dart';
+import '../../features/authentication/presentation/pages/forgot_password_page.dart';
+import '../../features/authentication/presentation/pages/password_reset_success_page.dart';
 import '../../features/authentication/presentation/pages/register_page.dart';
+import '../../features/authentication/presentation/pages/reset_password_page.dart';
 import '../../features/authentication/presentation/pages/splash_page.dart';
 import '../../features/authentication/presentation/pages/verify_email_page.dart';
+import '../../features/authentication/presentation/pages/verify_reset_code_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/legal/application/providers.dart';
 import '../../features/legal/presentation/pages/legal_document_page.dart';
@@ -50,6 +54,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.register,
         builder: (context, state) => const RegisterPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.forgotPassword,
+        builder: (context, state) => const ForgotPasswordPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.verifyResetCode,
+        builder: (context, state) => const VerifyResetCodePage(),
+      ),
+      GoRoute(
+        path: AppRoutes.resetPassword,
+        builder: (context, state) => const ResetPasswordPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.passwordResetSuccess,
+        builder: (context, state) => const PasswordResetSuccessPage(),
       ),
       GoRoute(
         path: AppRoutes.verifyEmail,
@@ -180,7 +200,11 @@ String? _redirect(Ref ref, GoRouterState state) {
   final isAuthRoute =
       location == AppRoutes.login ||
       location == AppRoutes.register ||
-      location == AppRoutes.verifyEmail;
+      location == AppRoutes.verifyEmail ||
+      location == AppRoutes.forgotPassword ||
+      location == AppRoutes.verifyResetCode ||
+      location == AppRoutes.resetPassword ||
+      location == AppRoutes.passwordResetSuccess;
   final isPublicLegalRoute =
       location == AppRoutes.legalTerms || location == AppRoutes.legalPrivacy;
   final isLegalUpdate = location == AppRoutes.legalUpdate;

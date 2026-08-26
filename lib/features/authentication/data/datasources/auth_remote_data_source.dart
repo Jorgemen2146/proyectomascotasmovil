@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 
 import '../../../../core/constants/api_paths.dart';
 import '../dto/auth_response_dto.dart';
+import '../dto/password_recovery_dtos.dart';
 import '../dto/user_dto.dart';
 import '../../../legal/domain/entities/legal.dart';
 
@@ -71,6 +72,44 @@ class AuthRemoteDataSource {
     await _rawDio.post<void>(
       ApiPaths.resendVerification,
       data: {'email': email},
+    );
+  }
+
+  Future<ForgotPasswordResponseDto> forgotPassword({
+    required String email,
+  }) async {
+    final response = await _rawDio.post<Map<String, dynamic>>(
+      ApiPaths.forgotPassword,
+      data: {'email': email},
+    );
+    return ForgotPasswordResponseDto.fromJson(response.data!);
+  }
+
+  Future<VerifyResetCodeResponseDto> verifyResetCode({
+    required String email,
+    required String code,
+  }) async {
+    final response = await _rawDio.post<Map<String, dynamic>>(
+      ApiPaths.verifyResetCode,
+      data: {'email': email, 'code': code},
+    );
+    return VerifyResetCodeResponseDto.fromJson(response.data!);
+  }
+
+  Future<void> resetPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    await _rawDio.post<void>(
+      ApiPaths.resetPassword,
+      data: {
+        'email': email,
+        'code': code,
+        'newPassword': newPassword,
+        'confirmPassword': confirmPassword,
+      },
     );
   }
 

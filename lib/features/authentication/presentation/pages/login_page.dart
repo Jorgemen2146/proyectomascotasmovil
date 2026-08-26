@@ -393,8 +393,8 @@ class _LoginForm extends StatelessWidget {
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
-              onPressed: () =>
-                  AppSnackBar.showInfo(context, 'Próximamente disponible.'),
+              key: const Key('forgotPasswordLink'),
+              onPressed: () => context.push(AppRoutes.forgotPassword),
               child: const Text('¿Olvidaste tu contraseña?'),
             ),
           ),

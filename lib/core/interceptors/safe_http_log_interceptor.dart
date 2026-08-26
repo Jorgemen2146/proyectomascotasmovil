@@ -57,6 +57,11 @@ dynamic sanitizeHttpValue(dynamic value) {
 
 const _sensitiveKeys = {
   'password',
+  'newpassword',
+  'confirmpassword',
+  'code',
+  'verificationcode',
+  'resetcode',
   'accesstoken',
   'refreshtoken',
   'authorization',

@@ -37,15 +37,15 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
       prefixIcon: AppIcons.lock,
       textInputAction: widget.textInputAction ?? TextInputAction.next,
       autofillHints: widget.autofillHints ?? const [AutofillHints.password],
-      validator:
-          widget.validator ??
-          (value) => (value == null || value.length < 6)
-              ? 'Mínimo 6 caracteres'
-              : null,
+      validator: widget.validator ?? validateDogPlatformPassword,
       suffixIcon: IconButton(
         icon: Icon(_obscured ? AppIcons.eyeOff : AppIcons.eyeOn),
         onPressed: () => setState(() => _obscured = !_obscured),
       ),
     );
   }
+}
+
+String? validateDogPlatformPassword(String? value) {
+  return (value == null || value.length < 6) ? 'Mínimo 6 caracteres' : null;
 }

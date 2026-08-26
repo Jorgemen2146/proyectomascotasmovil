@@ -86,6 +86,43 @@ void main() {
     expect(rawDio.lastRequest?.data, {'email': 'jorge@test.com'});
   });
 
+  test('Password Recovery coincide exactamente con Postman', () async {
+    rawDio.responseData = {
+      'message': 'Si el correo está registrado, te enviaremos un código.',
+    };
+    final forgot = await dataSource.forgotPassword(email: 'jorge@test.com');
+    expect(rawDio.lastRequest?.path, ApiPaths.forgotPassword);
+    expect(rawDio.lastRequest?.data, {'email': 'jorge@test.com'});
+    expect(forgot.message, contains('te enviaremos un código'));
+
+    rawDio.responseData = {'valid': true};
+    final verification = await dataSource.verifyResetCode(
+      email: 'jorge@test.com',
+      code: '483921',
+    );
+    expect(rawDio.lastRequest?.path, ApiPaths.verifyResetCode);
+    expect(rawDio.lastRequest?.data, {
+      'email': 'jorge@test.com',
+      'code': '483921',
+    });
+    expect(verification.valid, isTrue);
+
+    await dataSource.resetPassword(
+      email: 'jorge@test.com',
+      code: '483921',
+      newPassword: 'Testing456',
+      confirmPassword: 'Testing456',
+    );
+    expect(rawDio.lastRequest?.path, ApiPaths.resetPassword);
+    expect(rawDio.lastRequest?.data, {
+      'email': 'jorge@test.com',
+      'code': '483921',
+      'newPassword': 'Testing456',
+      'confirmPassword': 'Testing456',
+    });
+    expect(authenticatedDio.lastRequest, isNull);
+  });
+
   test('Logout es anónimo y envía refreshToken', () async {
     await dataSource.logout(refreshToken: 'refresh');
 

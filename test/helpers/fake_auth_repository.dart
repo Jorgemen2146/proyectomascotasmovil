@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dogplatform/core/errors/app_failure.dart';
 import 'package:dogplatform/core/result/result.dart';
 import 'package:dogplatform/core/services/photo_picker_service.dart';
@@ -12,6 +14,12 @@ class FakeAuthRepository implements AuthRepository {
   Result<void> registerResult = const Result.success(null);
   Result<void> verifyResult = const Result.success(null);
   Result<void> resendResult = const Result.success(null);
+  Result<String> forgotPasswordResult = const Result.success(
+    'Si el correo está registrado, te enviaremos un código.',
+  );
+  Result<bool> verifyResetCodeResult = const Result.success(true);
+  Result<void> resetPasswordResult = const Result.success(null);
+  Completer<Result<String>>? forgotPasswordCompleter;
   Result<User> currentUserResult = const Result.failure(UnauthorizedFailure());
   Result<void> updateProfileResult = const Result.success(null);
   Result<void> uploadProfilePhotoResult = const Result.success(null);
@@ -21,8 +29,13 @@ class FakeAuthRepository implements AuthRepository {
   int registerCalls = 0;
   int verifyCalls = 0;
   int resendCalls = 0;
+  int forgotPasswordCalls = 0;
+  int verifyResetCodeCalls = 0;
+  int resetPasswordCalls = 0;
   String? lastEmail;
   String? lastCode;
+  String? lastNewPassword;
+  String? lastConfirmPassword;
   String? lastFirstName;
   String? lastLastName;
   String? lastPhoneNumber;
@@ -74,6 +87,42 @@ class FakeAuthRepository implements AuthRepository {
     resendCalls++;
     lastEmail = email;
     return resendResult;
+  }
+
+  @override
+  Future<Result<String>> forgotPassword({required String email}) async {
+    forgotPasswordCalls++;
+    lastEmail = email;
+    if (forgotPasswordCompleter case final completer?) {
+      return completer.future;
+    }
+    return forgotPasswordResult;
+  }
+
+  @override
+  Future<Result<bool>> verifyResetCode({
+    required String email,
+    required String code,
+  }) async {
+    verifyResetCodeCalls++;
+    lastEmail = email;
+    lastCode = code;
+    return verifyResetCodeResult;
+  }
+
+  @override
+  Future<Result<void>> resetPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    resetPasswordCalls++;
+    lastEmail = email;
+    lastCode = code;
+    lastNewPassword = newPassword;
+    lastConfirmPassword = confirmPassword;
+    return resetPasswordResult;
   }
 
   @override

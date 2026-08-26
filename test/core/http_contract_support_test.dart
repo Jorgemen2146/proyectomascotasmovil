@@ -41,6 +41,9 @@ void main() {
         sanitizeHttpValue({
               'email': 'jorge@test.com',
               'password': 'secret',
+              'newPassword': 'NewSecret1',
+              'confirmPassword': 'NewSecret1',
+              'code': '483921',
               'tokens': {'accessToken': 'access', 'refreshToken': 'refresh'},
               'Authorization': 'Bearer token',
             })
@@ -48,6 +51,9 @@ void main() {
 
     expect(sanitized['email'], 'jorge@test.com');
     expect(sanitized['password'], '***');
+    expect(sanitized['newPassword'], '***');
+    expect(sanitized['confirmPassword'], '***');
+    expect(sanitized['code'], '***');
     expect((sanitized['tokens'] as Map)['accessToken'], '***');
     expect((sanitized['tokens'] as Map)['refreshToken'], '***');
     expect(sanitized['Authorization'], '***');
