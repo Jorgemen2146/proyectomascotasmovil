@@ -45,7 +45,9 @@ void main() {
       );
   });
 
-  testWidgets('perfil muestra usuario y correo verificado', (tester) async {
+  testWidgets('perfil muestra datos reales sin asumir verificación', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -59,7 +61,7 @@ void main() {
 
     expect(find.text('Jorge Gonzales'), findsOneWidget);
     expect(find.text('jorge@example.com'), findsOneWidget);
-    expect(find.text('Correo verificado'), findsOneWidget);
+    expect(find.text('Correo verificado'), findsNothing);
     expect(find.text('Editar perfil'), findsOneWidget);
   });
 
@@ -102,6 +104,22 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('profilePhotoSelector')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tomar foto'), findsOneWidget);
+    expect(find.text('Elegir de galería'), findsOneWidget);
+  });
+
+  testWidgets('cámara de Mi Perfil reutiliza selector real', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [authRepositoryProvider.overrideWithValue(repository)],
+        child: const MaterialApp(home: ProfilePage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('profileCameraButton')));
     await tester.pumpAndSettle();
 
     expect(find.text('Tomar foto'), findsOneWidget);
@@ -178,11 +196,49 @@ void main() {
     router.go(AppRoutes.profile);
     await tester.pumpAndSettle();
     final privacyLink = find.text('Privacidad');
+    expect(privacyLink, findsOneWidget);
+    expect(find.text('Política de privacidad'), findsNothing);
     await tester.ensureVisible(privacyLink);
     await tester.tap(privacyLink);
     await tester.pumpAndSettle();
     expect(find.text('legal-privacy'), findsOneWidget);
   });
+
+  testWidgets(
+    'logout usa bottom sheet, permite cancelar y confirma logout real',
+    (tester) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [authRepositoryProvider.overrideWithValue(repository)],
+          child: const MaterialApp(home: ProfilePage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final logout = find.byKey(const Key('profileLogoutButton'));
+      await tester.ensureVisible(logout);
+      await tester.tap(logout);
+      await tester.pumpAndSettle();
+      expect(find.text('¿Cerrar sesión?'), findsOneWidget);
+      expect(find.byKey(const Key('confirmLogoutButton')), findsOneWidget);
+      expect(find.byKey(const Key('cancelLogoutButton')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('cancelLogoutButton')));
+      await tester.pumpAndSettle();
+      expect(find.text('¿Cerrar sesión?'), findsNothing);
+      expect(repository.logoutCalls, 0);
+
+      await tester.tap(logout);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('confirmLogoutButton')));
+      await tester.pumpAndSettle();
+      expect(repository.logoutCalls, 1);
+    },
+  );
 
   test('controller actualiza perfil e incluye teléfono', () async {
     final container = ProviderContainer(
@@ -248,6 +304,24 @@ void main() {
       container.read(profileControllerProvider).value?.profilePhotoUrl,
       '/api/v1/auth/me/photo/content',
     );
+  });
+
+  test('controller actualiza solamente la foto y refresca perfil', () async {
+    final container = ProviderContainer(
+      overrides: [authRepositoryProvider.overrideWithValue(repository)],
+    );
+    addTearDown(container.dispose);
+    final subscription = container.listen(profileControllerProvider, (_, _) {});
+    addTearDown(subscription.close);
+    await container.read(profileControllerProvider.future);
+    repository.profileEvents.clear();
+
+    final outcome = await container
+        .read(profileControllerProvider.notifier)
+        .updatePhoto(_selectedPhoto());
+
+    expect(outcome?.photoFailure, isNull);
+    expect(repository.profileEvents, ['uploadProfilePhoto', 'getCurrentUser']);
   });
 
   test('fallo de foto conserva datos actualizados y errorId', () async {

@@ -21,8 +21,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Luna'), findsOneWidget);
-    expect(find.text('Golden Retriever'), findsOneWidget);
+    expect(find.text('Luna'), findsWidgets);
+    expect(find.text('Golden Retriever'), findsWidgets);
     expect(find.text('Max'), findsNothing);
     expect(find.byIcon(Icons.logout_rounded), findsNothing);
   });

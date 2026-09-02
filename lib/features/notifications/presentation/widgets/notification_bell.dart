@@ -22,7 +22,11 @@ class NotificationBell extends ConsumerWidget {
       icon: Stack(
         clipBehavior: Clip.none,
         children: [
-          const Icon(AppIcons.notification),
+          const Icon(
+            AppIcons.notification,
+            color: AppColors.textPrimary,
+            size: 27,
+          ),
           if (count > 0)
             Positioned(
               top: -7,

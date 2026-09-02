@@ -72,7 +72,7 @@ class _HealthPageState extends ConsumerState<HealthPage> {
           },
         ),
       ),
-      bottomNavigationBar: const MainBottomNavigation(currentIndex: 2),
+      bottomNavigationBar: const MainBottomNavigation(currentIndex: 3),
     );
   }
 

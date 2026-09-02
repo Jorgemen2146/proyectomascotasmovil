@@ -21,13 +21,13 @@ class MatchingMatchesPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final matches = ref.watch(matchesProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Mis conexiones')),
+      appBar: AppBar(title: const Text('Matches')),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(matchesProvider),
         child: matches.when(
           loading: () => const AppLoadingIndicator(),
           error: (_, _) => ErrorState(
-            message: 'No pudimos cargar tus conexiones.',
+            message: 'No pudimos cargar tus matches.',
             onRetry: () => ref.invalidate(matchesProvider),
           ),
           data: (items) => items.isEmpty
@@ -36,7 +36,7 @@ class MatchingMatchesPage extends ConsumerWidget {
                     SizedBox(height: 140),
                     EmptyState(
                       icon: Icons.favorite_border,
-                      title: 'Todavía no tienes conexiones.',
+                      title: 'Todavía no tienes matches',
                       message: 'Los matches aceptados aparecerán aquí.',
                     ),
                   ],
@@ -78,16 +78,22 @@ class _MatchCard extends StatelessWidget {
           '${match.pet1.name} ↔ ${match.pet2.name}',
           style: AppTypography.h3,
         ),
-        const Text('Match aceptado'),
+        Text(
+          'Match aceptado · ${_date(match.createdAtUtc)}',
+          style: AppTypography.caption,
+        ),
         const SizedBox(height: AppSpacing.md),
         AppButton.primary(
-          label: 'Ver conexión',
+          label: 'Ver match',
           onPressed: () => context.push(AppRoutes.matchingMatch(match.matchId)),
         ),
       ],
     ),
   );
 }
+
+String _date(DateTime value) =>
+    '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year}';
 
 class _PetAvatar extends StatelessWidget {
   const _PetAvatar(this.pet);

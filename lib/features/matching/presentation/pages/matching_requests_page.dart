@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/result/result.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
@@ -124,7 +125,20 @@ class _RequestCard extends ConsumerWidget {
             Text(request.message!),
           ],
           const SizedBox(height: AppSpacing.md),
-          if (incoming)
+          Align(
+            alignment: Alignment.centerRight,
+            child: Chip(
+              label: Text(_statusLabel(request.status)),
+              backgroundColor: _statusColor(
+                request.status,
+              ).withValues(alpha: .10),
+              labelStyle: AppTypography.small.copyWith(
+                color: _statusColor(request.status),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          if (request.status == 'Pending' && incoming)
             Row(
               children: [
                 Expanded(
@@ -143,7 +157,7 @@ class _RequestCard extends ConsumerWidget {
                 ),
               ],
             )
-          else
+          else if (request.status == 'Pending')
             AppButton(
               label: 'Cancelar solicitud',
               variant: AppButtonVariant.outlined,
@@ -231,3 +245,19 @@ void _showResult<T>(BuildContext context, Result<T> result, String success) {
 
 String _date(DateTime value) =>
     '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}/${value.year}';
+
+String _statusLabel(String status) => switch (status) {
+  'Pending' => 'Pendiente',
+  'Accepted' => 'Aceptada',
+  'Rejected' => 'Rechazada',
+  'Cancelled' => 'Cancelada',
+  'Expired' => 'Vencida',
+  _ => status,
+};
+
+Color _statusColor(String status) => switch (status) {
+  'Accepted' => AppColors.success,
+  'Rejected' => AppColors.error,
+  'Cancelled' || 'Expired' => AppColors.textSecondary,
+  _ => AppColors.primary,
+};

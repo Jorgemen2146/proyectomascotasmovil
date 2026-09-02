@@ -39,6 +39,7 @@ class _MatchingCandidatePageState extends ConsumerState<MatchingCandidatePage> {
       candidatePetId: widget.candidatePetId,
     );
     final detail = ref.watch(matchingCandidateProvider(key));
+    final outgoing = ref.watch(outgoingRequestsProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Perfil de mascota')),
       body: detail.when(
@@ -76,6 +77,7 @@ class _MatchingCandidatePageState extends ConsumerState<MatchingCandidatePage> {
             const SizedBox(height: AppSpacing.md),
             Wrap(
               spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
               children: [
                 Chip(
                   label: Text('${candidate.compatibilityScore}% compatible'),
@@ -94,7 +96,27 @@ class _MatchingCandidatePageState extends ConsumerState<MatchingCandidatePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('⚠️ Existe parentesco registrado'),
+                    const Row(
+                      children: [
+                        Icon(
+                          Icons.warning_amber_rounded,
+                          color: AppColors.warning,
+                        ),
+                        SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Posible parentesco detectado',
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                              Text('Existe parentesco registrado'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                     TextButton(
                       onPressed: () => showDialog<void>(
                         context: context,
@@ -149,24 +171,42 @@ class _MatchingCandidatePageState extends ConsumerState<MatchingCandidatePage> {
             const SizedBox(height: AppSpacing.md),
             Text(candidate.disclaimer, style: AppTypography.caption),
             const SizedBox(height: AppSpacing.lg),
-            if (_sent)
-              const AppCard(
-                child: ListTile(
-                  leading: Icon(Icons.schedule, color: AppColors.primary),
-                  title: Text('Solicitud enviada'),
-                  subtitle: Text('Pendiente de respuesta'),
-                ),
-              )
-            else
-              AppButton.primary(
-                key: const Key('sendMatchingRequest'),
-                label: 'Enviar solicitud',
-                isLoading: ref.watch(matchingControllerProvider),
-                onPressed: () => _send(candidate),
-              ),
+            _requestAction(candidate, outgoing),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _requestAction(
+    MatchingCandidate candidate,
+    AsyncValue<List<MatchRequest>> outgoing,
+  ) {
+    MatchRequest? existing;
+    final requests = outgoing.valueOrNull ?? const <MatchRequest>[];
+    for (final request in requests) {
+      if (request.requesterPetId == widget.sourcePetId &&
+          request.candidatePetId == widget.candidatePetId) {
+        existing = request;
+        break;
+      }
+    }
+    if (_sent || existing != null) {
+      final status = _sent ? 'Pending' : existing!.status;
+      return AppCard(
+        child: ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: Icon(_statusIcon(status), color: _statusColor(status)),
+          title: const Text('Solicitud enviada'),
+          subtitle: Text(_statusLabel(status)),
+        ),
+      );
+    }
+    return AppButton.primary(
+      key: const Key('sendMatchingRequest'),
+      label: 'Enviar solicitud',
+      isLoading: ref.watch(matchingControllerProvider),
+      onPressed: () => _send(candidate),
     );
   }
 
@@ -229,3 +269,24 @@ String _age(int months) => months < 12
     ? '$months meses'
     : '${months ~/ 12} ${months ~/ 12 == 1 ? 'año' : 'años'}';
 String _sex(String value) => value.toUpperCase() == 'F' ? 'Hembra' : 'Macho';
+
+String _statusLabel(String status) => switch (status) {
+  'Pending' => 'Pendiente de respuesta',
+  'Accepted' => 'Aceptada',
+  'Rejected' => 'Rechazada',
+  'Cancelled' => 'Cancelada',
+  'Expired' => 'Vencida',
+  _ => status,
+};
+
+IconData _statusIcon(String status) => switch (status) {
+  'Accepted' => Icons.check_circle_outline_rounded,
+  'Rejected' || 'Cancelled' || 'Expired' => Icons.cancel_outlined,
+  _ => Icons.schedule_rounded,
+};
+
+Color _statusColor(String status) => switch (status) {
+  'Accepted' => AppColors.success,
+  'Rejected' || 'Cancelled' || 'Expired' => AppColors.textSecondary,
+  _ => AppColors.primary,
+};

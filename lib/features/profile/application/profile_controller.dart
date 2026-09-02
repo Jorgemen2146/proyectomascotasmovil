@@ -68,6 +68,29 @@ class ProfileController extends AutoDisposeAsyncNotifier<User> {
     ref.read(authStateControllerProvider.notifier).replaceUser(user);
     return ProfileUpdateOutcome(photoFailure: photoFailure);
   }
+
+  Future<ProfileUpdateOutcome?> updatePhoto(SelectedPhoto photo) async {
+    final currentUser = state.value;
+    if (state.isLoading || currentUser == null) return null;
+    state = const AsyncLoading();
+    final repository = ref.read(authRepositoryProvider);
+    final uploaded = await repository.uploadProfilePhoto(photo);
+    if (uploaded.isFailure) {
+      state = AsyncData(currentUser);
+      return ProfileUpdateOutcome(photoFailure: uploaded.failureOrNull);
+    }
+
+    final refreshed = await repository.getCurrentUser();
+    if (refreshed.isFailure) {
+      state = AsyncData(currentUser);
+      return ProfileUpdateOutcome(refreshFailure: refreshed.failureOrNull);
+    }
+
+    final user = refreshed.valueOrNull!;
+    state = AsyncData(user);
+    ref.read(authStateControllerProvider.notifier).replaceUser(user);
+    return const ProfileUpdateOutcome();
+  }
 }
 
 final profileControllerProvider =

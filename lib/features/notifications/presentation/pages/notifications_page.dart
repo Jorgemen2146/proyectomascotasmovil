@@ -173,6 +173,11 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
       context.push(AppRoutes.matchingMatch(matchId));
       return;
     }
+    final requestId = notification.metadata?.matchRequestId;
+    if (requestId != null && requestId.isNotEmpty) {
+      context.push(AppRoutes.matchingRequests);
+      return;
+    }
     context.push(AppRoutes.matchingRequests);
   }
 }

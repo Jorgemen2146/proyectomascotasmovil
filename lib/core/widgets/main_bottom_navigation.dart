@@ -22,6 +22,11 @@ class MainBottomNavigation extends StatelessWidget {
       label: 'Mascotas',
     ),
     AppBottomNavItem(
+      icon: AppIcons.matchingOutlined,
+      selectedIcon: AppIcons.matching,
+      label: 'Pareja',
+    ),
+    AppBottomNavItem(
       icon: AppIcons.healthOutlined,
       selectedIcon: AppIcons.health,
       label: 'Salud',
@@ -36,6 +41,7 @@ class MainBottomNavigation extends StatelessWidget {
   static const _routes = [
     AppRoutes.home,
     AppRoutes.pets,
+    AppRoutes.matching,
     AppRoutes.health,
     AppRoutes.profile,
   ];

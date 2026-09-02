@@ -14,6 +14,7 @@ import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/app_network_image.dart';
 import '../../../../core/widgets/error_state.dart';
 import '../../application/profile_controller.dart';
+import '../widgets/profile_photo_source_sheet.dart';
 
 class EditProfilePage extends ConsumerStatefulWidget {
   const EditProfilePage({super.key});
@@ -113,25 +114,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   }
 
   Future<void> _showPhotoSource() async {
-    final source = await showModalBottomSheet<PhotoSource>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt_outlined),
-              title: const Text('Tomar foto'),
-              onTap: () => Navigator.pop(context, PhotoSource.camera),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Elegir de galería'),
-              onTap: () => Navigator.pop(context, PhotoSource.gallery),
-            ),
-          ],
-        ),
-      ),
-    );
+    final source = await showProfilePhotoSourceSheet(context);
     if (source == null || !mounted) return;
     final result = await ref.read(profilePhotoPickerProvider).pick(source);
     if (!mounted) return;

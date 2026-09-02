@@ -43,6 +43,49 @@ void main() {
     expect(find.text('Gatos'), findsOneWidget);
   });
 
+  testWidgets('búsqueda y filtros usan mascotas y cantidades reales', (
+    tester,
+  ) async {
+    final cat = PetSummary(
+      id: '22222222-2222-2222-2222-222222222222',
+      name: 'Michi',
+      speciesId: 2,
+      speciesName: 'Gato',
+      breedId: 20,
+      breedName: 'Persa',
+      sex: 'M',
+      birthDate: DateTime.utc(2024),
+      createdAt: DateTime.utc(2025),
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          myPetsProvider.overrideWith((ref) async => [samplePetSummary, cat]),
+        ],
+        child: const MaterialApp(home: PetsPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('petFiltertodas')),
+        matching: find.text('2'),
+      ),
+      findsOneWidget,
+    );
+    await tester.enterText(find.byKey(const Key('petSearchField')), 'Michi');
+    await tester.pump();
+    expect(find.text('Michi'), findsWidgets);
+    expect(find.text('Luna'), findsNothing);
+
+    await tester.enterText(find.byKey(const Key('petSearchField')), '');
+    await tester.tap(find.byKey(const Key('petFilterperros')));
+    await tester.pump();
+    expect(find.text('Luna'), findsOneWidget);
+    expect(find.text('Michi'), findsNothing);
+  });
+
   testWidgets('tab Salud abre Health con el petId del detalle', (tester) async {
     final router = GoRouter(
       initialLocation: '/pets/${samplePetSummary.id}',

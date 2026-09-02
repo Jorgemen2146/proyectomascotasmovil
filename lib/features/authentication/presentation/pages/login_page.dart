@@ -6,7 +6,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_icons.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_shadows.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_email_field.dart';
 import '../../../../core/widgets/app_password_field.dart';
@@ -65,19 +67,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF9FAFC),
+        backgroundColor: AppColors.background,
         body: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final mediaQuery = MediaQuery.of(context);
-              final keyboardOpen = mediaQuery.viewInsets.bottom > 0;
               final layout = _LoginLayout.resolve(
                 height: constraints.maxHeight,
                 width: constraints.maxWidth,
-                textScale: mediaQuery.textScaler.scale(1),
               );
-              final needsScroll =
-                  keyboardOpen || constraints.maxHeight < layout.minimumHeight;
               final content = Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 480),
@@ -89,15 +86,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _LoginHeader(layout: layout),
-                          Transform.translate(
-                            offset: Offset(0, -layout.overlap),
-                            child: _LoginForm(
-                              layout: layout,
-                              emailController: _emailController,
-                              passwordController: _passwordController,
-                              isSubmitting: _isSubmitting,
-                              onSubmit: _submit,
-                            ),
+                          _LoginForm(
+                            layout: layout,
+                            emailController: _emailController,
+                            passwordController: _passwordController,
+                            isSubmitting: _isSubmitting,
+                            onSubmit: _submit,
                           ),
                         ],
                       ),
@@ -105,16 +99,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   ),
                 ),
               );
-              if (!needsScroll) {
-                return Align(alignment: Alignment.topCenter, child: content);
-              }
               return SingleChildScrollView(
                 keyboardDismissBehavior:
                     ScrollViewKeyboardDismissBehavior.onDrag,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: content,
-                ),
+                child: content,
               );
             },
           ),
@@ -127,8 +115,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 class _LoginLayout {
   const _LoginLayout({
     required this.headerHeight,
-    required this.minimumHeight,
-    required this.overlap,
     required this.formTopPadding,
     required this.formBottomPadding,
     required this.fieldGap,
@@ -148,75 +134,65 @@ class _LoginLayout {
   factory _LoginLayout.resolve({
     required double height,
     required double width,
-    required double textScale,
   }) {
-    final scaleAllowance = ((textScale - 1).clamp(0, .25) * 80).toDouble();
     if (height >= 820) {
       return _LoginLayout(
         headerHeight: 290,
-        minimumHeight: 790 + scaleAllowance,
-        overlap: 26,
-        formTopPadding: 27,
-        formBottomPadding: 9,
-        fieldGap: 14,
-        beforeForgotGap: 20,
-        beforeButtonGap: 15,
-        beforeDividerGap: 30,
-        afterDividerGap: 15,
-        beforeSecurityGap: 21,
-        beforeAccountGap: 15,
+        formTopPadding: 18,
+        formBottomPadding: 8,
+        fieldGap: 10,
+        beforeForgotGap: 4,
+        beforeButtonGap: 6,
+        beforeDividerGap: 14,
+        afterDividerGap: 10,
+        beforeSecurityGap: 14,
+        beforeAccountGap: 12,
         loginButtonHeight: 56,
-        socialButtonSize: 64,
-        securityHeight: 64,
+        socialButtonSize: 52,
+        securityHeight: 58,
         headerScale: 1,
-        titleSize: 30,
+        titleSize: 27,
       );
     }
     if (height >= 720) {
       return _LoginLayout(
-        headerHeight: 235,
-        minimumHeight: 700 + scaleAllowance,
-        overlap: 22,
-        formTopPadding: 20,
+        headerHeight: 255,
+        formTopPadding: 16,
         formBottomPadding: 6,
-        fieldGap: 10,
-        beforeForgotGap: 10,
-        beforeButtonGap: 8,
-        beforeDividerGap: 18,
+        fieldGap: 8,
+        beforeForgotGap: 2,
+        beforeButtonGap: 4,
+        beforeDividerGap: 12,
         afterDividerGap: 10,
-        beforeSecurityGap: 14,
-        beforeAccountGap: 8,
+        beforeSecurityGap: 12,
+        beforeAccountGap: 10,
         loginButtonHeight: 52,
-        socialButtonSize: 56,
-        securityHeight: 60,
-        headerScale: width < 360 ? .78 : .82,
-        titleSize: 28,
+        socialButtonSize: 50,
+        securityHeight: 56,
+        headerScale: width < 360 ? .9 : .95,
+        titleSize: 26,
       );
     }
     return _LoginLayout(
-      headerHeight: 185,
-      minimumHeight: 610 + scaleAllowance,
-      overlap: 18,
-      formTopPadding: 12,
-      formBottomPadding: 4,
-      fieldGap: 6,
-      beforeForgotGap: 4,
+      headerHeight: 200,
+      formTopPadding: 8,
+      formBottomPadding: 2,
+      fieldGap: 4,
+      beforeForgotGap: 2,
       beforeButtonGap: 2,
-      beforeDividerGap: 8,
-      afterDividerGap: 6,
-      beforeSecurityGap: 8,
-      beforeAccountGap: 2,
+      beforeDividerGap: 6,
+      afterDividerGap: 4,
+      beforeSecurityGap: 6,
+      beforeAccountGap: 6,
       loginButtonHeight: 48,
-      socialButtonSize: 48,
-      securityHeight: 56,
-      headerScale: width < 360 ? .64 : .69,
-      titleSize: 26,
+      socialButtonSize: 44,
+      securityHeight: 52,
+      headerScale: width < 360 ? .76 : .8,
+      titleSize: 24,
     );
   }
 
   final double headerHeight;
-  final double minimumHeight;
-  final double overlap;
   final double formTopPadding;
   final double formBottomPadding;
   final double fieldGap;
@@ -236,8 +212,7 @@ class _LoginLayout {
   double headerBottom(double value) => value * headerScale;
   double headerSide(double value) => value * headerScale;
   double headerSize(double value) => value * headerScale;
-  double get headerTitleTop => headerHeight < 200 ? 24 : headerTop(61);
-  double get headerSubtitleTop => headerHeight < 200 ? 94 : headerTop(153);
+  double get headerTextHeight => headerHeight < 220 ? 112 : headerSize(132);
 }
 
 class _LoginHeader extends StatelessWidget {
@@ -249,106 +224,165 @@ class _LoginHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: layout.headerHeight,
-      child: Stack(
-        clipBehavior: Clip.none,
+      child: Column(
         children: [
-          const Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFFFFFFFF), Color(0xFFF7F9FD)],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            top: layout.headerTop(43),
-            right: layout.headerSide(25),
-            child: Hero(
-              tag: 'app-logo',
-              child: Image.asset(
-                _chatHeartAsset,
-                width: layout.headerSize(58),
-                height: layout.headerSize(58),
-              ),
-            ),
-          ),
-          Positioned(
-            top: layout.headerTitleTop,
-            left: layout.headerSide(28),
-            child: RichText(
-              text: TextSpan(
-                style: AppTypography.h1.copyWith(
-                  fontSize: layout.titleSize,
-                  height: 1.24,
-                ),
-                children: const [
-                  TextSpan(text: '¡Bienvenido de\n'),
-                  TextSpan(
-                    text: 'nuevo!',
-                    style: TextStyle(color: AppColors.primary),
+          SizedBox(
+            height: layout.headerTextHeight,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      top: layout.headerHeight < 220 ? 8 : 12,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: RichText(
+                              textAlign: TextAlign.center,
+                              text: TextSpan(
+                                style: AppTypography.h1.copyWith(
+                                  fontSize: layout.titleSize,
+                                  height: 1.14,
+                                ),
+                                children: const [
+                                  TextSpan(text: '¡Bienvenido de\n'),
+                                  TextSpan(
+                                    text: 'nuevo!',
+                                    style: TextStyle(color: AppColors.primary),
+                                  ),
+                                  TextSpan(text: ' 👋'),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(
+                          'Inicia sesión para continuar',
+                          textAlign: TextAlign.center,
+                          style: AppTypography.bodySecondary.copyWith(
+                            fontSize: layout.headerHeight < 220 ? 12 : 14,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  TextSpan(text: ' 👋'),
-                ],
-              ),
+                ),
+                Positioned(
+                  top: layout.headerHeight < 220 ? 6 : 12,
+                  right: layout.headerSide(25),
+                  child: Hero(
+                    tag: 'app-logo',
+                    child: Image.asset(
+                      _chatHeartAsset,
+                      width: layout.headerSize(48),
+                      height: layout.headerSize(48),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          Positioned(
-            top: layout.headerSubtitleTop,
-            left: layout.headerSide(28),
-            child: Text(
-              'Inicia sesión para continuar',
-              style: AppTypography.bodySecondary.copyWith(fontSize: 14),
-            ),
-          ),
-          Positioned(
-            left: layout.headerSide(8),
-            bottom: layout.headerBottom(18),
-            child: Image.asset(
-              _largePawAsset,
-              width: layout.headerSize(61),
-              height: layout.headerSize(56),
-            ),
-          ),
-          Positioned(
-            left: layout.headerSide(125),
-            bottom: layout.headerBottom(53),
-            child: Image.asset(
-              _smallPawAsset,
-              width: layout.headerSize(40),
-              height: layout.headerSize(37),
-            ),
-          ),
-          Positioned(
-            right: -layout.headerSide(9),
-            bottom: -layout.headerBottom(5),
-            child: Container(
-              width: layout.headerSize(170),
-              height: layout.headerSize(170),
-              decoration: const BoxDecoration(
-                color: Color(0xFFDDEBFF),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          Positioned(
-            right: -layout.headerSide(2),
-            bottom: layout.headerBottom(6),
-            width: layout.headerSize(193),
-            height: layout.headerSize(181),
-            child: Image.asset(
-              _loginPetsAsset,
-              alignment: Alignment.bottomCenter,
-              fit: BoxFit.contain,
-              filterQuality: FilterQuality.high,
+          Expanded(
+            child: Stack(
+              clipBehavior: Clip.hardEdge,
+              children: [
+                const Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [AppColors.surface, AppColors.background],
+                      ),
+                    ),
+                  ),
+                ),
+                const Positioned.fill(
+                  child: ClipPath(
+                    clipper: _LoginHeaderWaveClipper(),
+                    child: ColoredBox(color: AppColors.primarySoft),
+                  ),
+                ),
+                Positioned(
+                  left: layout.headerSide(13),
+                  bottom: layout.headerBottom(10),
+                  child: Image.asset(
+                    _largePawAsset,
+                    width: layout.headerSize(61),
+                    height: layout.headerSize(56),
+                  ),
+                ),
+                Positioned(
+                  left: layout.headerSide(112),
+                  bottom: layout.headerBottom(38),
+                  child: Image.asset(
+                    _smallPawAsset,
+                    width: layout.headerSize(40),
+                    height: layout.headerSize(37),
+                  ),
+                ),
+                Positioned.fill(
+                  child: Align(
+                    alignment: const Alignment(.52, 1),
+                    child: FractionallySizedBox(
+                      widthFactor: .57,
+                      heightFactor: 1,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 215),
+                        child: Image.asset(
+                          _loginPetsAsset,
+                          alignment: Alignment.bottomCenter,
+                          fit: BoxFit.contain,
+                          filterQuality: FilterQuality.high,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
+}
+
+class _LoginHeaderWaveClipper extends CustomClipper<Path> {
+  const _LoginHeaderWaveClipper();
+
+  @override
+  Path getClip(Size size) {
+    return Path()
+      ..moveTo(0, size.height * .04)
+      ..cubicTo(
+        size.width * .16,
+        size.height * .12,
+        size.width * .16,
+        size.height * .62,
+        size.width * .48,
+        size.height * .70,
+      )
+      ..cubicTo(
+        size.width * .73,
+        size.height * .80,
+        size.width * .78,
+        size.height * .35,
+        size.width,
+        size.height * .49,
+      )
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
 
 class _LoginForm extends StatelessWidget {
@@ -370,14 +404,16 @@ class _LoginForm extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.fromLTRB(
-        24,
+        AppSpacing.lg,
         layout.formTopPadding,
-        24,
+        AppSpacing.lg,
         layout.formBottomPadding,
       ),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppRadius.sheet),
+        ),
         boxShadow: AppShadows.soft,
       ),
       child: Column(
@@ -395,6 +431,11 @@ class _LoginForm extends StatelessWidget {
             child: TextButton(
               key: const Key('forgotPasswordLink'),
               onPressed: () => context.push(AppRoutes.forgotPassword),
+              style: TextButton.styleFrom(
+                minimumSize: const Size(0, 28),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
               child: const Text('¿Olvidaste tu contraseña?'),
             ),
           ),
@@ -405,6 +446,8 @@ class _LoginForm extends StatelessWidget {
             isLoading: isSubmitting,
             onPressed: onSubmit,
           ),
+          SizedBox(height: layout.beforeAccountGap),
+          const _CreateAccountCard(),
           SizedBox(height: layout.beforeDividerGap),
           Row(
             children: [
@@ -423,29 +466,6 @@ class _LoginForm extends StatelessWidget {
           _SocialLoginRow(buttonSize: layout.socialButtonSize),
           SizedBox(height: layout.beforeSecurityGap),
           _SecurityNotice(height: layout.securityHeight),
-          SizedBox(height: layout.beforeAccountGap),
-          Center(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(
-                children: [
-                  Text(
-                    '¿No tienes cuenta? ',
-                    style: AppTypography.bodySecondary,
-                  ),
-                  TextButton(
-                    onPressed: () => context.push(AppRoutes.register),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 3),
-                      minimumSize: const Size(0, 40),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: const Text('Crear cuenta'),
-                  ),
-                ],
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -472,16 +492,16 @@ class _LoginButton extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [Color(0xFF2F6BFF), Color(0xFF284FEA)],
+            colors: [AppColors.heroStart, AppColors.heroEnd],
           ),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: AppRadius.mdAll,
           boxShadow: AppShadows.soft,
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             onTap: isLoading ? null : onPressed,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: AppRadius.mdAll,
             child: SizedBox(
               height: height,
               child: Stack(
@@ -513,6 +533,73 @@ class _LoginButton extends StatelessWidget {
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CreateAccountCard extends StatelessWidget {
+  const _CreateAccountCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surface,
+      borderRadius: AppRadius.lgAll,
+      child: InkWell(
+        key: const Key('createAccountCard'),
+        onTap: () => context.push(AppRoutes.register),
+        borderRadius: AppRadius.lgAll,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 64),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.compact,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: AppRadius.lgAll,
+            border: Border.all(color: AppColors.primary.withValues(alpha: .42)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: const BoxDecoration(
+                  color: AppColors.primarySoft,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  AppIcons.pets,
+                  color: AppColors.primary,
+                  size: 25,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.compact),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('¿No tienes cuenta?', style: AppTypography.caption),
+                    Text(
+                      'Crea tu cuenta',
+                      style: AppTypography.body.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                AppIcons.chevronRight,
+                color: AppColors.primary,
+                size: 23,
+              ),
+            ],
           ),
         ),
       ),

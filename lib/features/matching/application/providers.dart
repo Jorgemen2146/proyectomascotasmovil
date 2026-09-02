@@ -52,7 +52,7 @@ final matchingCandidateProvider = FutureProvider.autoDispose
 final incomingRequestsProvider = FutureProvider.autoDispose<List<MatchRequest>>(
   (ref) async {
     return _unwrap(
-      await ref.read(matchingRepositoryProvider).getIncoming(status: 'Pending'),
+      await ref.read(matchingRepositoryProvider).getIncoming(),
     );
   },
 );
@@ -60,7 +60,7 @@ final incomingRequestsProvider = FutureProvider.autoDispose<List<MatchRequest>>(
 final outgoingRequestsProvider = FutureProvider.autoDispose<List<MatchRequest>>(
   (ref) async {
     return _unwrap(
-      await ref.read(matchingRepositoryProvider).getOutgoing(status: 'Pending'),
+      await ref.read(matchingRepositoryProvider).getOutgoing(),
     );
   },
 );

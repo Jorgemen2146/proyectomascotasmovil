@@ -32,6 +32,7 @@ class FakeAuthRepository implements AuthRepository {
   int forgotPasswordCalls = 0;
   int verifyResetCodeCalls = 0;
   int resetPasswordCalls = 0;
+  int logoutCalls = 0;
   String? lastEmail;
   String? lastCode;
   String? lastNewPassword;
@@ -126,7 +127,10 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<Result<void>> logout() async => const Result.success(null);
+  Future<Result<void>> logout() async {
+    logoutCalls++;
+    return const Result.success(null);
+  }
 
   @override
   Future<Result<User>> getCurrentUser() async {

@@ -4,16 +4,17 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_icons.dart';
 import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_shadows.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/app_card.dart';
-import '../../../../core/widgets/app_loading_indicator.dart';
 import '../../../../core/widgets/app_network_image.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_state.dart';
+import '../../../../core/widgets/main_bottom_navigation.dart';
 import '../../../pets/application/providers.dart';
 import '../../../pets/domain/entities/pet.dart';
 import '../../application/providers.dart';
@@ -37,78 +38,111 @@ class _MatchingPageState extends ConsumerState<MatchingPage> {
   Widget build(BuildContext context) {
     final pets = ref.watch(myPetsProvider);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Buscar pareja'),
-        actions: [
-          IconButton(
-            tooltip: 'Solicitudes',
-            onPressed: () => context.push(AppRoutes.matchingRequests),
-            icon: const Icon(Icons.inbox_outlined),
+      body: SafeArea(
+        bottom: false,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: pets.when(
+              loading: () => const _MatchingSkeleton(),
+              error: (_, _) => ErrorState(
+                message: 'No pudimos cargar tus mascotas.',
+                onRetry: () => ref.invalidate(myPetsProvider),
+              ),
+              data: _content,
+            ),
           ),
-          IconButton(
-            tooltip: 'Mis conexiones',
-            onPressed: () => context.push(AppRoutes.matchingMatches),
-            icon: const Icon(Icons.favorite_outline),
+        ),
+      ),
+      bottomNavigationBar: const MainBottomNavigation(currentIndex: 2),
+    );
+  }
+
+  Widget _content(List<PetSummary> items) {
+    if (items.isEmpty) {
+      return ListView(
+        padding: const EdgeInsets.all(AppSpacing.section),
+        children: [
+          const _MatchingHeader(),
+          const SizedBox(height: 72),
+          EmptyState(
+            icon: AppIcons.petsOutlined,
+            title: 'Aún no tienes mascotas',
+            message: 'Agrega una mascota para empezar a buscar pareja.',
+            actionLabel: 'Agregar mascota',
+            onAction: () => context.push(AppRoutes.newPet),
           ),
         ],
-      ),
-      body: pets.when(
-        loading: () => const AppLoadingIndicator(),
-        error: (_, _) => ErrorState(
-          message: 'No pudimos cargar tus mascotas.',
-          onRetry: () => ref.invalidate(myPetsProvider),
+      );
+    }
+    final requested = _petId ?? widget.initialPetId;
+    final selected = items.any((pet) => pet.id == requested)
+        ? requested!
+        : items.first.id;
+    final pet = items.firstWhere((item) => item.id == selected);
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.invalidate(matchingProfileProvider(selected));
+        ref.invalidate(matchingSearchProvider);
+      },
+      child: ListView(
+        key: const Key('matchingScrollView'),
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.section,
+          AppSpacing.md,
+          AppSpacing.section,
+          AppSpacing.lg,
         ),
-        data: (items) {
-          if (items.isEmpty) {
-            return const EmptyState(
-              icon: Icons.pets_outlined,
-              title: 'Primero registra una mascota',
-              message: 'Necesitas una mascota para comenzar a buscar pareja.',
-            );
-          }
-          final requested = _petId ?? widget.initialPetId;
-          final selected = items.any((pet) => pet.id == requested)
-              ? requested!
-              : items.first.id;
-          final pet = items.firstWhere((item) => item.id == selected);
-          return RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(matchingProfileProvider(selected));
-              ref.invalidate(matchingSearchProvider);
-            },
-            child: ListView(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              children: [
-                DropdownButtonFormField<String>(
-                  key: const Key('matchingPetSelector'),
-                  initialValue: selected,
-                  decoration: const InputDecoration(labelText: 'Mi mascota'),
-                  items: [
-                    for (final item in items)
-                      DropdownMenuItem(value: item.id, child: Text(item.name)),
-                  ],
-                  onChanged: (value) => setState(() {
-                    _petId = value;
+        children: [
+          const _MatchingHeader(),
+          const SizedBox(height: AppSpacing.lg),
+          const _MatchingSectionNavigation(selectedIndex: 0),
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            '¿Para cuál mascota buscas pareja?',
+            style: AppTypography.sectionTitle,
+          ),
+          const SizedBox(height: AppSpacing.compact),
+          SizedBox(
+            height: 128,
+            child: ListView.separated(
+              key: const Key('matchingPetSelector'),
+              scrollDirection: Axis.horizontal,
+              itemCount: items.length,
+              separatorBuilder: (_, _) =>
+                  const SizedBox(width: AppSpacing.compact),
+              itemBuilder: (_, index) {
+                final item = items[index];
+                return _PetSelectorCard(
+                  pet: item,
+                  selected: item.id == selected,
+                  onTap: () => setState(() {
+                    _petId = item.id;
                     _breedId = null;
                     _minimumAgeMonths = null;
                     _maximumAgeMonths = null;
                   }),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                _ProfileAndSearch(
-                  pet: pet,
-                  filters: MatchingSearchFilters(
-                    petId: selected,
-                    breedId: _breedId,
-                    minimumAgeMonths: _minimumAgeMonths,
-                    maximumAgeMonths: _maximumAgeMonths,
-                  ),
-                  onFilters: () => _showFilters(pet),
-                ),
-              ],
+                );
+              },
             ),
-          );
-        },
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          _ProfileAndSearch(
+            pet: pet,
+            filters: MatchingSearchFilters(
+              petId: selected,
+              breedId: _breedId,
+              minimumAgeMonths: _minimumAgeMonths,
+              maximumAgeMonths: _maximumAgeMonths,
+            ),
+            hasFilters:
+                _breedId != null ||
+                _minimumAgeMonths != null ||
+                _maximumAgeMonths != null,
+            onFilters: () => _showFilters(pet),
+          ),
+        ],
       ),
     );
   }
@@ -122,15 +156,42 @@ class _MatchingPageState extends ConsumerState<MatchingPage> {
     var breed = _breedId;
     final breeds = await ref.read(breedsProvider(pet.speciesId).future);
     if (!mounted) return;
-    final accepted = await showDialog<bool>(
+    final accepted = await showModalBottomSheet<bool>(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Filtros'),
-          content: SingleChildScrollView(
+        builder: (context, setDialogState) => Container(
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.compact,
+            AppSpacing.lg,
+            MediaQuery.viewInsetsOf(context).bottom + AppSpacing.lg,
+          ),
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppRadius.sheet),
+            ),
+          ),
+          child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Center(
+                  child: Container(
+                    width: 42,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: AppRadius.pillAll,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Text('Filtrar parejas', style: AppTypography.h2),
+                const SizedBox(height: AppSpacing.lg),
                 DropdownButtonFormField<int?>(
                   initialValue: breed,
                   decoration: const InputDecoration(labelText: 'Raza'),
@@ -175,31 +236,46 @@ class _MatchingPageState extends ConsumerState<MatchingPage> {
                     ),
                   ),
                 ],
+                const SizedBox(height: AppSpacing.lg),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          breed = null;
+                          minimumAge = '';
+                          maximumAge = '';
+                          parsedMinimumAge = null;
+                          parsedMaximumAge = null;
+                          Navigator.pop(context, true);
+                        },
+                        child: const Text('Limpiar'),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.compact),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () {
+                          final validation = _validateOptionalAges(
+                            minimumAge,
+                            maximumAge,
+                          );
+                          if (validation.error case final error?) {
+                            setDialogState(() => ageError = error);
+                            return;
+                          }
+                          parsedMinimumAge = validation.minimum;
+                          parsedMaximumAge = validation.maximum;
+                          Navigator.pop(context, true);
+                        },
+                        child: const Text('Aplicar'),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final validation = _validateOptionalAges(
-                  minimumAge,
-                  maximumAge,
-                );
-                if (validation.error case final error?) {
-                  setDialogState(() => ageError = error);
-                  return;
-                }
-                parsedMinimumAge = validation.minimum;
-                parsedMaximumAge = validation.maximum;
-                Navigator.pop(context, true);
-              },
-              child: const Text('Aplicar'),
-            ),
-          ],
         ),
       ),
     );
@@ -213,29 +289,197 @@ class _MatchingPageState extends ConsumerState<MatchingPage> {
   }
 }
 
+class _MatchingHeader extends StatelessWidget {
+  const _MatchingHeader();
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Container(
+        width: 48,
+        height: 48,
+        decoration: const BoxDecoration(
+          color: AppColors.primarySoft,
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(AppIcons.matching, color: AppColors.primary),
+      ),
+      const SizedBox(width: AppSpacing.compact),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Buscar pareja', style: AppTypography.screenTitle),
+            Text(
+              'Encuentra una pareja compatible para tu mascota',
+              style: AppTypography.caption,
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
+}
+
+class _MatchingSectionNavigation extends StatelessWidget {
+  const _MatchingSectionNavigation({required this.selectedIndex});
+  final int selectedIndex;
+  @override
+  Widget build(BuildContext context) {
+    const labels = ['Descubrir', 'Solicitudes', 'Matches'];
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.xs),
+      decoration: BoxDecoration(
+        color: AppColors.primaryFaint,
+        borderRadius: AppRadius.mdAll,
+        border: Border.all(color: AppColors.primarySoft),
+      ),
+      child: Row(
+        children: [
+          for (final (index, label) in labels.indexed)
+            Expanded(
+              child: Material(
+                color: index == selectedIndex
+                    ? AppColors.surface
+                    : Colors.transparent,
+                borderRadius: AppRadius.smAll,
+                child: InkWell(
+                  key: Key('matchingSection$index'),
+                  borderRadius: AppRadius.smAll,
+                  onTap: index == selectedIndex
+                      ? null
+                      : () => context.push(
+                          index == 1
+                              ? AppRoutes.matchingRequests
+                              : AppRoutes.matchingMatches,
+                        ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      style: AppTypography.small.copyWith(
+                        color: index == selectedIndex
+                            ? AppColors.primary
+                            : AppColors.textSecondary,
+                        fontWeight: index == selectedIndex
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PetSelectorCard extends StatelessWidget {
+  const _PetSelectorCard({
+    required this.pet,
+    required this.selected,
+    required this.onTap,
+  });
+  final PetSummary pet;
+  final bool selected;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => Material(
+    color: AppColors.surface,
+    borderRadius: AppRadius.lgAll,
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: AppRadius.lgAll,
+      child: Container(
+        width: 224,
+        padding: const EdgeInsets.all(AppSpacing.compact),
+        decoration: BoxDecoration(
+          borderRadius: AppRadius.lgAll,
+          border: Border.all(
+            color: selected ? AppColors.primary : AppColors.border,
+            width: selected ? 2 : 1,
+          ),
+          boxShadow: AppShadows.subtle,
+        ),
+        child: Row(
+          children: [
+            AppNetworkImage(
+              url: pet.mainPhotoUrl,
+              width: 72,
+              height: 88,
+              borderRadius: AppRadius.mdAll,
+            ),
+            const SizedBox(width: AppSpacing.compact),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          pet.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.cardTitle,
+                        ),
+                      ),
+                      if (selected)
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
+                    ],
+                  ),
+                  Text(
+                    pet.breedName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.caption,
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    '${_sex(pet.sex)} · ${_petAge(pet)}',
+                    maxLines: 1,
+                    style: AppTypography.small,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
 class _ProfileAndSearch extends ConsumerWidget {
   const _ProfileAndSearch({
     required this.pet,
     required this.filters,
+    required this.hasFilters,
     required this.onFilters,
   });
   final PetSummary pet;
   final MatchingSearchFilters filters;
+  final bool hasFilters;
   final VoidCallback onFilters;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(matchingProfileProvider(pet.id));
     return profile.when(
-      loading: () => const AppLoadingIndicator(),
+      loading: () => const _InlineSkeleton(),
       error: (_, _) => ErrorState(
         message: 'No pudimos consultar el perfil de ${pet.name}.',
         onRetry: () => ref.invalidate(matchingProfileProvider(pet.id)),
       ),
       data: (value) {
-        if (value == null || !value.isActive) {
-          return _InactiveProfile(pet: pet);
-        }
+        if (value == null || !value.isActive) return _InactiveProfile(pet: pet);
         final candidates = ref.watch(matchingSearchProvider(filters));
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -243,27 +487,33 @@ class _ProfileAndSearch extends ConsumerWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text('Parejas sugeridas', style: AppTypography.h2),
+                  child: Text(
+                    'Parejas recomendadas',
+                    style: AppTypography.sectionTitle,
+                  ),
                 ),
                 OutlinedButton.icon(
                   key: const Key('matchingFilters'),
                   onPressed: onFilters,
-                  icon: const Icon(Icons.tune),
+                  icon: Icon(
+                    hasFilters ? Icons.filter_alt : Icons.tune_rounded,
+                    size: 18,
+                  ),
                   label: const Text('Filtros'),
                 ),
               ],
             ),
             const SizedBox(height: AppSpacing.md),
             candidates.when(
-              loading: () => const AppLoadingIndicator(),
+              loading: () => const _CandidateSkeleton(),
               error: (_, _) => ErrorState(
-                message: 'No pudimos buscar parejas.',
+                message: 'No pudimos buscar parejas en este momento.',
                 onRetry: () => ref.invalidate(matchingSearchProvider(filters)),
               ),
               data: (items) => items.isEmpty
                   ? const EmptyState(
-                      icon: Icons.search_off_outlined,
-                      title: 'No encontramos parejas con estos filtros.',
+                      icon: Icons.search_off_rounded,
+                      title: 'No encontramos parejas',
                       message: 'Prueba con criterios más amplios.',
                     )
                   : Column(
@@ -310,13 +560,40 @@ class _InactiveProfileState extends ConsumerState<_InactiveProfile> {
   }
 
   @override
-  Widget build(BuildContext context) => AppCard(
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(AppSpacing.section),
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        colors: [AppColors.primaryFaint, AppColors.surface],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      borderRadius: AppRadius.cardAll,
+      border: Border.all(color: AppColors.primarySoft),
+      boxShadow: AppShadows.card,
+    ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('${widget.pet.name} aún no está visible', style: AppTypography.h2),
+        const Icon(AppIcons.matching, color: AppColors.primary, size: 34),
         const SizedBox(height: AppSpacing.sm),
-        const Text('Activa su perfil para encontrar posibles parejas.'),
+        Text(
+          'Activa su perfil',
+          textAlign: TextAlign.center,
+          style: AppTypography.h2,
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          '${widget.pet.name} aún no está visible',
+          textAlign: TextAlign.center,
+          style: AppTypography.body.copyWith(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          'Completa la información necesaria para empezar a encontrar parejas compatibles.',
+          textAlign: TextAlign.center,
+          style: AppTypography.bodySecondary,
+        ),
         const SizedBox(height: AppSpacing.lg),
         if (!_editing)
           AppButton.primary(
@@ -335,31 +612,28 @@ class _InactiveProfileState extends ConsumerState<_InactiveProfile> {
             onChanged: (value) => setState(() => _sex = value ?? 'F'),
           ),
           const SizedBox(height: AppSpacing.md),
-          ref
-              .watch(breedsProvider(widget.pet.speciesId))
-              .when(
-                loading: () => const LinearProgressIndicator(),
-                error: (_, _) => const Text('No pudimos cargar las razas.'),
-                data: (breeds) => DropdownButtonFormField<int?>(
-                  initialValue: _preferredBreedId,
-                  decoration: const InputDecoration(
-                    labelText: 'Raza preferida (opcional)',
-                  ),
-                  items: [
-                    const DropdownMenuItem(
-                      value: null,
-                      child: Text('Sin preferencia'),
-                    ),
-                    for (final breed in breeds)
-                      DropdownMenuItem(
-                        value: breed.breedId,
-                        child: Text(breed.name),
-                      ),
-                  ],
-                  onChanged: (value) =>
-                      setState(() => _preferredBreedId = value),
-                ),
+          ref.watch(breedsProvider(widget.pet.speciesId)).when(
+            loading: () => const LinearProgressIndicator(),
+            error: (_, _) => const Text('No pudimos cargar las razas.'),
+            data: (breeds) => DropdownButtonFormField<int?>(
+              initialValue: _preferredBreedId,
+              decoration: const InputDecoration(
+                labelText: 'Raza preferida (opcional)',
               ),
+              items: [
+                const DropdownMenuItem(
+                  value: null,
+                  child: Text('Sin preferencia'),
+                ),
+                for (final breed in breeds)
+                  DropdownMenuItem(
+                    value: breed.breedId,
+                    child: Text(breed.name),
+                  ),
+              ],
+              onChanged: (value) => setState(() => _preferredBreedId = value),
+            ),
+          ),
           const SizedBox(height: AppSpacing.md),
           Row(
             children: [
@@ -369,8 +643,8 @@ class _InactiveProfileState extends ConsumerState<_InactiveProfile> {
                   controller: _minimumAge,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
-                    labelText: 'Edad mínima (opcional)',
-                    helperText: 'Meses',
+                    labelText: 'Edad mínima',
+                    helperText: 'Opcional · meses',
                   ),
                 ),
               ),
@@ -381,8 +655,8 @@ class _InactiveProfileState extends ConsumerState<_InactiveProfile> {
                   controller: _maximumAge,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
-                    labelText: 'Edad máxima (opcional)',
-                    helperText: 'Meses',
+                    labelText: 'Edad máxima',
+                    helperText: 'Opcional · meses',
                   ),
                 ),
               ),
@@ -441,70 +715,159 @@ class _CandidateCard extends StatelessWidget {
   const _CandidateCard({required this.sourcePetId, required this.candidate});
   final String sourcePetId;
   final MatchingCandidate candidate;
-
   @override
-  Widget build(BuildContext context) => AppCard(
-    padding: EdgeInsets.zero,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        AppNetworkImage(
-          url: candidate.mainPhotoUrl,
-          height: 220,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(candidate.name, style: AppTypography.h2),
+  Widget build(BuildContext context) => Container(
+    decoration: BoxDecoration(
+      color: AppColors.surface,
+      borderRadius: AppRadius.cardAll,
+      border: Border.all(color: AppColors.border.withValues(alpha: .75)),
+      boxShadow: AppShadows.card,
+    ),
+    child: ClipRRect(
+      borderRadius: AppRadius.cardAll,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppNetworkImage(url: candidate.mainPhotoUrl, height: 220),
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(candidate.name, style: AppTypography.h2),
+                    ),
+                    _InfoChip(
+                      label: '${candidate.compatibilityScore}% compatible',
+                      emphasized: true,
+                    ),
+                  ],
+                ),
+                Text(candidate.breedName, style: AppTypography.bodySecondary),
+                const SizedBox(height: AppSpacing.sm),
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: [
+                    _InfoChip(label: _sex(candidate.sex)),
+                    _InfoChip(label: _age(candidate.ageMonths)),
+                    if (candidate.hasPedigree)
+                      const _InfoChip(label: 'Pedigree'),
+                  ],
+                ),
+                if (candidate.hasKnownRelationship) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.compact),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning.withValues(alpha: .10),
+                      borderRadius: AppRadius.mdAll,
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.warning_amber_rounded,
+                          color: AppColors.warning,
+                          size: 20,
+                        ),
+                        SizedBox(width: AppSpacing.sm),
+                        Expanded(child: Text('Existe parentesco registrado')),
+                      ],
+                    ),
                   ),
-                  Chip(label: Text('${candidate.compatibilityScore}%')),
                 ],
-              ),
-              Text(candidate.breedName, style: AppTypography.bodySecondary),
-              Text('${_age(candidate.ageMonths)} · ${_sex(candidate.sex)}'),
-              if (candidate.hasPedigree) ...[
-                const SizedBox(height: AppSpacing.sm),
-                const Chip(label: Text('Pedigree')),
-              ],
-              if (candidate.hasKnownRelationship) ...[
-                const SizedBox(height: AppSpacing.sm),
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.sm),
-                  decoration: BoxDecoration(
-                    color: AppColors.warning.withValues(alpha: .12),
-                    borderRadius: AppRadius.mdAll,
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(
-                        Icons.warning_amber_rounded,
-                        color: AppColors.warning,
-                      ),
-                      SizedBox(width: AppSpacing.sm),
-                      Expanded(child: Text('Existe parentesco registrado')),
-                    ],
+                const SizedBox(height: AppSpacing.md),
+                AppButton.primary(
+                  label: 'Ver perfil',
+                  onPressed: () => context.push(
+                    AppRoutes.matchingCandidate(sourcePetId, candidate.petId),
                   ),
                 ),
               ],
-              const SizedBox(height: AppSpacing.md),
-              AppButton.primary(
-                label: 'Ver perfil',
-                onPressed: () => context.push(
-                  AppRoutes.matchingCandidate(sourcePetId, candidate.petId),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _InfoChip extends StatelessWidget {
+  const _InfoChip({required this.label, this.emphasized = false});
+  final String label;
+  final bool emphasized;
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+    decoration: BoxDecoration(
+      color: emphasized ? AppColors.primarySoft : AppColors.ageSoft,
+      borderRadius: AppRadius.pillAll,
+    ),
+    child: Text(
+      label,
+      style: AppTypography.small.copyWith(
+        color: emphasized ? AppColors.primary : AppColors.textSecondary,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  );
+}
+
+class _MatchingSkeleton extends StatelessWidget {
+  const _MatchingSkeleton();
+  @override
+  Widget build(BuildContext context) => const Padding(
+    padding: EdgeInsets.all(AppSpacing.section),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SkeletonBox(width: 230, height: 24),
+        SizedBox(height: AppSpacing.sm),
+        _SkeletonBox(width: 300, height: 14),
+        SizedBox(height: AppSpacing.xl),
+        _SkeletonBox(height: 46),
+        SizedBox(height: AppSpacing.xl),
+        _SkeletonBox(width: 250, height: 18),
+        SizedBox(height: AppSpacing.md),
+        _SkeletonBox(height: 128),
       ],
     ),
   );
+}
+
+class _InlineSkeleton extends StatelessWidget {
+  const _InlineSkeleton();
+  @override
+  Widget build(BuildContext context) => const _SkeletonBox(height: 170);
+}
+
+class _CandidateSkeleton extends StatelessWidget {
+  const _CandidateSkeleton();
+  @override
+  Widget build(BuildContext context) => const _SkeletonBox(height: 350);
+}
+
+class _SkeletonBox extends StatelessWidget {
+  const _SkeletonBox({this.width = double.infinity, required this.height});
+  final double width;
+  final double height;
+  @override
+  Widget build(BuildContext context) => Container(
+    width: width,
+    height: height,
+    decoration: BoxDecoration(
+      color: AppColors.ageSoft,
+      borderRadius: AppRadius.lgAll,
+    ),
+  );
+}
+
+String _petAge(PetSummary pet) {
+  final years = pet.ageYears;
+  if (years == null) return 'Edad no indicada';
+  return '$years ${years == 1 ? 'año' : 'años'}';
 }
 
 String _age(int months) => months < 12

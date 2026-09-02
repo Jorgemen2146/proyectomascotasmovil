@@ -20,4 +20,20 @@ class AppShadows {
       offset: const Offset(0, 2),
     ),
   ];
+
+  static List<BoxShadow> get card => [
+    BoxShadow(
+      color: const Color(0xFF26385C).withValues(alpha: 0.07),
+      blurRadius: 18,
+      offset: const Offset(0, 7),
+    ),
+  ];
+
+  static List<BoxShadow> get floatingBlue => [
+    BoxShadow(
+      color: const Color(0xFF2563EB).withValues(alpha: 0.28),
+      blurRadius: 18,
+      offset: const Offset(0, 8),
+    ),
+  ];
 }

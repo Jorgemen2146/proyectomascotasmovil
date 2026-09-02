@@ -43,4 +43,44 @@ class AppTypography {
     fontWeight: FontWeight.w400,
     color: AppColors.textSecondary,
   );
+
+  static TextStyle get display => GoogleFonts.poppins(
+    fontSize: 25,
+    height: 1.2,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+  );
+
+  static TextStyle get screenTitle => GoogleFonts.poppins(
+    fontSize: 18,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+  );
+
+  static TextStyle get sectionTitle => GoogleFonts.poppins(
+    fontSize: 15,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+  );
+
+  static TextStyle get cardTitle => GoogleFonts.poppins(
+    fontSize: 15,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+  );
+
+  static TextStyle get small => GoogleFonts.poppins(
+    fontSize: 11,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textSecondary,
+  );
+
+  static TextStyle get eyebrow => GoogleFonts.poppins(
+    fontSize: 10,
+    fontWeight: FontWeight.w700,
+    color: AppColors.primary,
+  );
+
+  static TextStyle get button =>
+      GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600);
 }

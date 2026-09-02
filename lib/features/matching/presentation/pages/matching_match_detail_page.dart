@@ -22,11 +22,11 @@ class MatchingMatchDetailPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final match = ref.watch(matchDetailProvider(matchId));
     return Scaffold(
-      appBar: AppBar(title: const Text('Conexión')),
+      appBar: AppBar(title: const Text('Detalle del match')),
       body: match.when(
         loading: () => const AppLoadingIndicator(),
         error: (_, _) => ErrorState(
-          message: 'No pudimos cargar la conexión.',
+          message: 'No pudimos cargar el match.',
           onRetry: () => ref.invalidate(matchDetailProvider(matchId)),
         ),
         data: (value) => RefreshIndicator(
@@ -197,6 +197,16 @@ class _BreedingIntentSection extends ConsumerWidget {
                   : null,
             ),
           ),
+          if (isAgreed) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Acuerdo confirmado',
+              style: AppTypography.body.copyWith(
+                color: AppColors.success,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
           if (isProposed) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(

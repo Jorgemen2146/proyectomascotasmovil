@@ -1,6 +1,5 @@
 // Smoke test verifying the app boots to the splash screen without throwing.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -15,6 +14,6 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: DogPlatformApp()));
     await tester.pump();
 
-    expect(find.byIcon(Icons.pets), findsOneWidget);
+    expect(find.text('DogPlatform', findRichText: true), findsOneWidget);
   });
 }
