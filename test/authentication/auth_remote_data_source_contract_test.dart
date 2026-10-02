@@ -3,6 +3,7 @@ import 'package:dogplatform/core/constants/api_paths.dart';
 import 'package:dogplatform/features/authentication/data/datasources/auth_remote_data_source.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dogplatform/features/legal/domain/entities/legal.dart';
+import 'package:dogplatform/features/authentication/domain/entities/external_auth.dart';
 
 void main() {
   late _RecordingDio rawDio;
@@ -71,6 +72,62 @@ void main() {
     });
     expect(response.userId, '11111111-1111-1111-1111-111111111111');
     expect(response.firstName, 'Jorge');
+  });
+
+  test('Google, Facebook y Apple coinciden con Postman', () async {
+    rawDio.responseData = _authResponse;
+    await dataSource.externalLogin(
+      credential: const ExternalProviderCredential(
+        provider: ExternalAuthProvider.google,
+        credential: 'google-id-token',
+      ),
+    );
+    expect(rawDio.lastRequest?.path, ApiPaths.externalGoogle);
+    expect(rawDio.lastRequest?.data, {'idToken': 'google-id-token'});
+
+    await dataSource.externalLogin(
+      credential: const ExternalProviderCredential(
+        provider: ExternalAuthProvider.facebook,
+        credential: 'facebook-access-token',
+      ),
+    );
+    expect(rawDio.lastRequest?.path, ApiPaths.externalFacebook);
+    expect(rawDio.lastRequest?.data, {'accessToken': 'facebook-access-token'});
+
+    await dataSource.externalLogin(
+      credential: const ExternalProviderCredential(
+        provider: ExternalAuthProvider.apple,
+        credential: 'apple-id-token',
+        nonce: 'original-nonce',
+      ),
+    );
+    expect(rawDio.lastRequest?.path, ApiPaths.externalApple);
+    expect(rawDio.lastRequest?.data, {
+      'idToken': 'apple-id-token',
+      'nonce': 'original-nonce',
+    });
+  });
+
+  test('Complete External Registration coincide con Postman', () async {
+    rawDio.responseData = _authResponse;
+    await dataSource.completeExternalRegistration(
+      registrationToken: 'registration-token',
+      email: 'jorge@test.com',
+      firstName: 'Jorge',
+      lastName: 'Test',
+      legalConsents: const [
+        LegalConsentSelection(type: 'TermsAndConditions', version: '1.0'),
+        LegalConsentSelection(type: 'PrivacyPolicy', version: '1.0'),
+      ],
+    );
+    expect(rawDio.lastRequest?.path, ApiPaths.completeExternalRegistration);
+    expect(rawDio.lastRequest?.data, {
+      'registrationToken': 'registration-token',
+      'email': 'jorge@test.com',
+      'firstName': 'Jorge',
+      'lastName': 'Test',
+      'legalConsents': _consents,
+    });
   });
 
   test('Verify Email y Resend coinciden con Postman', () async {
@@ -188,6 +245,22 @@ void main() {
     );
   });
 }
+
+const _consents = [
+  {'type': 'TermsAndConditions', 'version': '1.0'},
+  {'type': 'PrivacyPolicy', 'version': '1.0'},
+];
+
+final _authResponse = <String, dynamic>{
+  'userId': '11111111-1111-1111-1111-111111111111',
+  'firstName': 'Jorge',
+  'lastName': 'Test',
+  'email': 'jorge@test.com',
+  'accessToken': 'access',
+  'accessTokenExpiresAtUtc': '2030-01-01T00:00:00Z',
+  'refreshToken': 'refresh',
+  'refreshTokenExpiresAtUtc': '2031-01-01T00:00:00Z',
+};
 
 class _RecordingDio {
   _RecordingDio() {

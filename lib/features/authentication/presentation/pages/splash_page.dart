@@ -159,9 +159,9 @@ class _SplashBrand extends StatelessWidget {
               color: Colors.white,
             ),
             children: const [
-              TextSpan(text: 'Dog'),
+              TextSpan(text: 'Pet'),
               TextSpan(
-                text: 'Platform',
+                text: 'Life',
                 style: TextStyle(color: Color(0xFF50C7F4)),
               ),
             ],

@@ -2,12 +2,25 @@ import '../../../../core/result/result.dart';
 import '../../../../core/services/photo_picker_service.dart';
 import '../entities/user.dart';
 import '../../../legal/domain/entities/legal.dart';
+import '../entities/external_auth.dart';
 
 /// Domain-facing contract for authentication operations. The data layer
 /// provides the concrete implementation; application/presentation code only
 /// ever depends on this abstraction.
 abstract class AuthRepository {
   Future<Result<User>> login({required String email, required String password});
+
+  Future<Result<ExternalAuthResult>> externalLogin({
+    required ExternalProviderCredential credential,
+  });
+
+  Future<Result<User>> completeExternalRegistration({
+    required String registrationToken,
+    required String email,
+    required String firstName,
+    required String lastName,
+    required List<LegalConsentSelection> legalConsents,
+  });
 
   Future<Result<void>> register({
     required String firstName,

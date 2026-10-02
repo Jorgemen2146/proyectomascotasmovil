@@ -226,6 +226,7 @@ void main() {
       expect(find.text('¿Cerrar sesión?'), findsOneWidget);
       expect(find.byKey(const Key('confirmLogoutButton')), findsOneWidget);
       expect(find.byKey(const Key('cancelLogoutButton')), findsOneWidget);
+      expect(find.textContaining('PetLife'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('cancelLogoutButton')));
       await tester.pumpAndSettle();

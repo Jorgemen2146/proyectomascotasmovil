@@ -6,6 +6,11 @@ class ApiPaths {
   ApiPaths._();
 
   static const String login = '/api/v1/auth/login';
+  static const String externalGoogle = '/api/v1/auth/external/google';
+  static const String externalFacebook = '/api/v1/auth/external/facebook';
+  static const String externalApple = '/api/v1/auth/external/apple';
+  static const String completeExternalRegistration =
+      '/api/v1/auth/external/complete-registration';
   static const String register = '/api/v1/auth/register';
   static const String verifyEmail = '/api/v1/auth/verify-email';
   static const String resendVerification = '/api/v1/auth/resend-verification';

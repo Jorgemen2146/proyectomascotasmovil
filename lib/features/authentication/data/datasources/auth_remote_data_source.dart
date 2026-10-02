@@ -7,6 +7,7 @@ import '../dto/auth_response_dto.dart';
 import '../dto/password_recovery_dtos.dart';
 import '../dto/user_dto.dart';
 import '../../../legal/domain/entities/legal.dart';
+import '../../domain/entities/external_auth.dart';
 
 /// Talks directly to the Identity service's REST endpoints. Never throws
 /// [AppException]s itself — callers (the repository) are responsible for
@@ -33,6 +34,51 @@ class AuthRemoteDataSource {
     );
     return AuthResponseDto.fromJson(response.data!);
   }
+
+  Future<AuthResponseDto> externalLogin({
+    required ExternalProviderCredential credential,
+  }) async {
+    final path = switch (credential.provider) {
+      ExternalAuthProvider.google => ApiPaths.externalGoogle,
+      ExternalAuthProvider.facebook => ApiPaths.externalFacebook,
+      ExternalAuthProvider.apple => ApiPaths.externalApple,
+    };
+    final tokenKey = credential.provider == ExternalAuthProvider.facebook
+        ? 'accessToken'
+        : 'idToken';
+    final response = await _rawDio.post<Map<String, dynamic>>(
+      path,
+      data: {tokenKey: credential.credential, 'nonce': ?credential.nonce},
+    );
+    return AuthResponseDto.fromJson(response.data!);
+  }
+
+  Future<AuthResponseDto> completeExternalRegistration({
+    required String registrationToken,
+    required String email,
+    required String firstName,
+    required String lastName,
+    required List<LegalConsentSelection> legalConsents,
+  }) async {
+    final response = await _rawDio.post<Map<String, dynamic>>(
+      ApiPaths.completeExternalRegistration,
+      data: {
+        'registrationToken': registrationToken,
+        'email': email,
+        'firstName': firstName,
+        'lastName': lastName,
+        'legalConsents': _consentsJson(legalConsents),
+      },
+    );
+    return AuthResponseDto.fromJson(response.data!);
+  }
+
+  List<Map<String, String>> _consentsJson(
+    List<LegalConsentSelection> legalConsents,
+  ) => [
+    for (final consent in legalConsents)
+      {'type': consent.type, 'version': consent.version},
+  ];
 
   Future<void> register({
     required String firstName,

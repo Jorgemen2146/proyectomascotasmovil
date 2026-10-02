@@ -123,7 +123,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      'Únete a DogPlatform',
+                      'Únete a PetLife',
                       style: AppTypography.bodySecondary,
                       textAlign: TextAlign.center,
                     ),

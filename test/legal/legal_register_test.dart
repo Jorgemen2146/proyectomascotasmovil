@@ -19,6 +19,7 @@ void main() {
     final auth = FakeAuthRepository();
     await _pumpRegister(tester, auth: auth);
 
+    expect(find.textContaining('PetLife'), findsOneWidget);
     expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, isFalse);
     expect(tester.widget<AppButton>(find.byType(AppButton)).onPressed, isNull);
     expect(auth.registerCalls, 0);

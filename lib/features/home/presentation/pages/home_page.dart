@@ -272,7 +272,7 @@ class _FeaturedPetCard extends StatelessWidget {
                           ),
                           const Spacer(),
                           Text(
-                            'En DogPlatform desde',
+                            'En PetLife desde',
                             style: AppTypography.small.copyWith(
                               color: Colors.white.withValues(alpha: .78),
                             ),

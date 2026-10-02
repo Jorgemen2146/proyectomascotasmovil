@@ -13,6 +13,7 @@ import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_data_source.dart';
 import '../dto/auth_response_dto.dart';
 import '../../../legal/domain/entities/legal.dart';
+import '../../domain/entities/external_auth.dart';
 
 /// Concrete [AuthRepository] backed by [AuthRemoteDataSource] and
 /// [SecureTokenStorage]. Responsible for persisting/clearing tokens as a
@@ -36,6 +37,59 @@ class AuthRepositoryImpl implements AuthRepository {
       () => _remoteDataSource.login(email: email, password: password),
     );
   }
+
+  @override
+  Future<Result<ExternalAuthResult>> externalLogin({
+    required ExternalProviderCredential credential,
+  }) async {
+    try {
+      final response = await _remoteDataSource.externalLogin(
+        credential: credential,
+      );
+      await _saveSession(response);
+      return Result.success(ExternalAuthAuthenticated(response.toDomain()));
+    } on DioException catch (error) {
+      final data = error.response?.data;
+      if (error.response?.statusCode == 422 && data is Map) {
+        final token = data['registrationToken']?.toString();
+        if (token != null && token.isNotEmpty) {
+          final rawMissing = data['missingFields'];
+          final missing = rawMissing is List
+              ? rawMissing.map((item) => item.toString()).toSet()
+              : const {'email', 'firstName', 'lastName'};
+          return Result.success(
+            ExternalRegistrationRequired(
+              registrationToken: token,
+              email: data['email']?.toString(),
+              firstName: data['firstName']?.toString(),
+              lastName: data['lastName']?.toString(),
+              missingFields: missing,
+            ),
+          );
+        }
+      }
+      return Result.failure(_mapExternalFailure(error));
+    } catch (_) {
+      return const Result.failure(UnknownFailure());
+    }
+  }
+
+  @override
+  Future<Result<User>> completeExternalRegistration({
+    required String registrationToken,
+    required String email,
+    required String firstName,
+    required String lastName,
+    required List<LegalConsentSelection> legalConsents,
+  }) => _runAuthCall(
+    () => _remoteDataSource.completeExternalRegistration(
+      registrationToken: registrationToken,
+      email: email,
+      firstName: firstName,
+      lastName: lastName,
+      legalConsents: legalConsents,
+    ),
+  );
 
   @override
   Future<Result<void>> register({
@@ -179,10 +233,7 @@ class AuthRepositoryImpl implements AuthRepository {
   ) async {
     try {
       final response = await call();
-      await _tokenStorage.saveTokens(
-        accessToken: response.accessToken,
-        refreshToken: response.refreshToken,
-      );
+      await _saveSession(response);
       return Result.success(response.toDomain());
     } on DioException catch (e) {
       return Result.failure(
@@ -191,6 +242,36 @@ class AuthRepositoryImpl implements AuthRepository {
     } catch (_) {
       return const Result.failure(UnknownFailure());
     }
+  }
+
+  Future<void> _saveSession(AuthResponseDto response) =>
+      _tokenStorage.saveTokens(
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken,
+      );
+
+  AppFailure _mapExternalFailure(DioException error) {
+    final data = error.response?.data;
+    final code = data is Map
+        ? (data['code'] ?? data['error'])?.toString()
+        : null;
+    if (code == 'ACCOUNT_LINK_REQUIRED' ||
+        code == 'EXTERNAL_ACCOUNT_LINK_REQUIRED') {
+      return const ValidationFailure(
+        'Ya existe una cuenta de PetLife asociada a este correo. Inicia sesión con tu método habitual para vincularla.',
+      );
+    }
+    if (code == 'EXTERNAL_TOKEN_INVALID') {
+      return const ValidationFailure(
+        'No pudimos validar tu cuenta. Inténtalo nuevamente.',
+      );
+    }
+    if (code == 'EXTERNAL_PROVIDER_NOT_CONFIGURED') {
+      return const ValidationFailure(
+        'Este método de acceso no está disponible en este momento.',
+      );
+    }
+    return mapExceptionToFailure(mapDioExceptionToAppException(error));
   }
 
   Future<Result<void>> _runVoidCall(Future<void> Function() call) async {

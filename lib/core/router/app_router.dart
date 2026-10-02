@@ -7,6 +7,8 @@ import '../../features/authentication/presentation/pages/login_page.dart';
 import '../../features/authentication/presentation/pages/forgot_password_page.dart';
 import '../../features/authentication/presentation/pages/password_reset_success_page.dart';
 import '../../features/authentication/presentation/pages/register_page.dart';
+import '../../features/authentication/presentation/pages/complete_external_registration_page.dart';
+import '../../features/authentication/domain/entities/external_auth.dart';
 import '../../features/authentication/presentation/pages/reset_password_page.dart';
 import '../../features/authentication/presentation/pages/splash_page.dart';
 import '../../features/authentication/presentation/pages/verify_email_page.dart';
@@ -54,6 +56,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.register,
         builder: (context, state) => const RegisterPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.completeExternalRegistration,
+        redirect: (context, state) =>
+            state.extra is ExternalRegistrationRequired
+            ? null
+            : AppRoutes.login,
+        builder: (context, state) => CompleteExternalRegistrationPage(
+          registration: state.extra! as ExternalRegistrationRequired,
+        ),
       ),
       GoRoute(
         path: AppRoutes.forgotPassword,
@@ -200,6 +212,7 @@ String? _redirect(Ref ref, GoRouterState state) {
   final isAuthRoute =
       location == AppRoutes.login ||
       location == AppRoutes.register ||
+      location == AppRoutes.completeExternalRegistration ||
       location == AppRoutes.verifyEmail ||
       location == AppRoutes.forgotPassword ||
       location == AppRoutes.verifyResetCode ||

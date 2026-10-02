@@ -475,7 +475,7 @@ class _LogoutBottomSheet extends StatelessWidget {
               Text('¿Cerrar sesión?', style: AppTypography.h1),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                '¿Seguro que quieres salir de tu cuenta de DogPlatform? '
+                '¿Seguro que quieres salir de tu cuenta de PetLife? '
                 'Puedes iniciar sesión nuevamente cuando lo desees.',
                 textAlign: TextAlign.center,
                 style: AppTypography.body.copyWith(height: 1.55),

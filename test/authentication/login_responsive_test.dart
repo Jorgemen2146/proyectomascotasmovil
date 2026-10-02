@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
 void main() {
-  for (final size in const [
+  const loginSizes = [
     Size(320, 568),
     Size(360, 640),
     Size(360, 800),
@@ -15,7 +15,9 @@ void main() {
     Size(412, 915),
     Size(430, 932),
     Size(768, 1024),
-  ]) {
+  ];
+
+  for (final size in loginSizes) {
     testWidgets('Login separa texto, animales y formulario en $size', (
       tester,
     ) async {
@@ -23,7 +25,7 @@ void main() {
       await _pumpLogin(tester);
 
       expect(tester.takeException(), isNull);
-      if (size.height >= 667) {
+      if (size.height >= 720) {
         final scrollable = tester.state<ScrollableState>(
           find.byType(Scrollable).first,
         );
@@ -41,13 +43,26 @@ void main() {
                 'assets/images/01_dog_cat_login.png',
       );
       final emailField = find.byType(TextFormField).first;
+      final heroArea = find.byKey(const Key('loginHeroPetsArea'));
+      final imageHeight = tester.getSize(animals).height;
+      expect(imageHeight, inInclusiveRange(152, 220));
+      expect(tester.widget<Image>(animals).fit, BoxFit.contain);
+      expect(tester.getCenter(animals).dx, tester.getCenter(heroArea).dx);
       expect(
-        tester.getBottomLeft(subtitle).dy,
-        lessThan(tester.getTopLeft(animals).dy),
+        tester.getTopLeft(animals).dy - tester.getBottomLeft(subtitle).dy,
+        greaterThan(0),
       );
       expect(
         tester.getBottomLeft(animals).dy,
         lessThanOrEqualTo(tester.getTopLeft(emailField).dy),
+      );
+      expect(
+        tester.getTopLeft(animals).dy,
+        greaterThanOrEqualTo(tester.getTopLeft(heroArea).dy),
+      );
+      expect(
+        tester.getBottomRight(animals).dy,
+        lessThanOrEqualTo(tester.getBottomRight(heroArea).dy),
       );
     });
   }
@@ -61,24 +76,40 @@ void main() {
     final scrollable = tester.state<ScrollableState>(
       find.byType(Scrollable).first,
     );
-    expect(scrollable.position.maxScrollExtent, 0);
+    expect(scrollable.position.maxScrollExtent, greaterThan(0));
     expect(find.text('Crea tu cuenta'), findsOneWidget);
   });
 
-  testWidgets('Login permite scroll cuando se abre el teclado', (tester) async {
-    await _setView(tester, const Size(390, 780));
-    await _pumpLogin(tester);
+  for (final size in loginSizes) {
+    for (final fieldIndex in const [0, 1]) {
+      testWidgets(
+        'Login conserva el hero con teclado en $size, campo $fieldIndex',
+        (tester) async {
+          await _setView(tester, size);
+          await _pumpLogin(tester);
 
-    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
-    addTearDown(() => tester.view.resetViewInsets());
-    await tester.pumpAndSettle();
+          final animals = find.byKey(const Key('loginPetsImage'));
+          final initialImageHeight = tester.getSize(animals).height;
+          await tester.tap(find.byType(TextFormField).at(fieldIndex));
+          tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+          addTearDown(() => tester.view.resetViewInsets());
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 300));
 
-    expect(tester.takeException(), isNull);
-    final scrollable = tester.state<ScrollableState>(
-      find.byType(Scrollable).first,
-    );
-    expect(scrollable.position.maxScrollExtent, greaterThan(0));
-  });
+          expect(tester.takeException(), isNull);
+          expect(tester.getSize(animals).height, initialImageHeight);
+          final scrollable = tester.state<ScrollableState>(
+            find.byType(Scrollable).first,
+          );
+          expect(scrollable.position.maxScrollExtent, greaterThan(0));
+          final loginButton = find.byKey(const Key('loginSubmitButton'));
+          await tester.ensureVisible(loginButton);
+          await tester.pump();
+          expect(loginButton, findsOneWidget);
+        },
+      );
+    }
+  }
 
   testWidgets('respeta la jerarquía visual aprobada', (tester) async {
     await _setView(tester, const Size(390, 844));

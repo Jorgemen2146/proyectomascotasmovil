@@ -15,6 +15,7 @@ import '../../../../core/widgets/app_password_field.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/fade_slide_in.dart';
 import '../../application/auth_state_controller.dart';
+import '../../domain/entities/external_auth.dart';
 
 const _loginPetsAsset = 'assets/images/01_dog_cat_login.png';
 const _chatHeartAsset = 'assets/images/05_chat_heart_icon.png';
@@ -34,6 +35,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isSubmitting = false;
+  ExternalAuthProvider? _loadingProvider;
 
   @override
   void dispose() {
@@ -62,6 +64,25 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
 
+  Future<void> _socialLogin(ExternalAuthProvider provider) async {
+    if (_loadingProvider != null) return;
+    setState(() => _loadingProvider = provider);
+    final outcome = await ref
+        .read(authStateControllerProvider.notifier)
+        .externalLogin(provider: provider);
+    if (!mounted) return;
+    setState(() => _loadingProvider = null);
+    if (outcome is ExternalRegistrationRequired) {
+      await context.push(
+        AppRoutes.completeExternalRegistration,
+        extra: outcome,
+      );
+    } else if (outcome == null) {
+      final message = ref.read(authStateControllerProvider).errorMessage;
+      if (message != null) AppSnackBar.showError(context, message);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -71,9 +92,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         body: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
+              final screenSize = MediaQuery.sizeOf(context);
               final layout = _LoginLayout.resolve(
-                height: constraints.maxHeight,
-                width: constraints.maxWidth,
+                height: screenSize.height,
+                width: screenSize.width,
               );
               final content = Center(
                 child: ConstrainedBox(
@@ -92,6 +114,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             passwordController: _passwordController,
                             isSubmitting: _isSubmitting,
                             onSubmit: _submit,
+                            loadingProvider: _loadingProvider,
+                            onSocialLogin: _socialLogin,
                           ),
                         ],
                       ),
@@ -114,7 +138,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
 class _LoginLayout {
   const _LoginLayout({
-    required this.headerHeight,
+    required this.headerTextHeight,
+    required this.heroPetsHeight,
+    required this.isCompact,
     required this.formTopPadding,
     required this.formBottomPadding,
     required this.fieldGap,
@@ -135,9 +161,12 @@ class _LoginLayout {
     required double height,
     required double width,
   }) {
+    final heroPetsHeight = _resolveHeroPetsHeight(height: height, width: width);
     if (height >= 820) {
       return _LoginLayout(
-        headerHeight: 290,
+        headerTextHeight: 132,
+        heroPetsHeight: heroPetsHeight,
+        isCompact: false,
         formTopPadding: 18,
         formBottomPadding: 8,
         fieldGap: 10,
@@ -155,8 +184,11 @@ class _LoginLayout {
       );
     }
     if (height >= 720) {
+      final headerScale = width < 360 ? .9 : .95;
       return _LoginLayout(
-        headerHeight: 255,
+        headerTextHeight: 132 * headerScale,
+        heroPetsHeight: heroPetsHeight,
+        isCompact: false,
         formTopPadding: 16,
         formBottomPadding: 6,
         fieldGap: 8,
@@ -169,12 +201,14 @@ class _LoginLayout {
         loginButtonHeight: 52,
         socialButtonSize: 50,
         securityHeight: 56,
-        headerScale: width < 360 ? .9 : .95,
+        headerScale: headerScale,
         titleSize: 26,
       );
     }
     return _LoginLayout(
-      headerHeight: 200,
+      headerTextHeight: 112,
+      heroPetsHeight: heroPetsHeight,
+      isCompact: true,
       formTopPadding: 8,
       formBottomPadding: 2,
       fieldGap: 4,
@@ -192,7 +226,26 @@ class _LoginLayout {
     );
   }
 
-  final double headerHeight;
+  static const double minHeroPetsHeight = 152;
+  static const double maxHeroPetsHeight = 220;
+
+  static double _resolveHeroPetsHeight({
+    required double height,
+    required double width,
+  }) {
+    final widthBasedHeight = width * .52;
+    final screenBasedHeight = height * .24;
+    final preferredHeight = widthBasedHeight < screenBasedHeight
+        ? widthBasedHeight
+        : screenBasedHeight;
+    return preferredHeight
+        .clamp(minHeroPetsHeight, maxHeroPetsHeight)
+        .toDouble();
+  }
+
+  final double headerTextHeight;
+  final double heroPetsHeight;
+  final bool isCompact;
   final double formTopPadding;
   final double formBottomPadding;
   final double fieldGap;
@@ -212,7 +265,7 @@ class _LoginLayout {
   double headerBottom(double value) => value * headerScale;
   double headerSide(double value) => value * headerScale;
   double headerSize(double value) => value * headerScale;
-  double get headerTextHeight => headerHeight < 220 ? 112 : headerSize(132);
+  double get headerHeight => headerTextHeight + heroPetsHeight;
 }
 
 class _LoginHeader extends StatelessWidget {
@@ -232,9 +285,7 @@ class _LoginHeader extends StatelessWidget {
               children: [
                 Positioned.fill(
                   child: Padding(
-                    padding: EdgeInsets.only(
-                      top: layout.headerHeight < 220 ? 8 : 12,
-                    ),
+                    padding: EdgeInsets.only(top: layout.isCompact ? 8 : 12),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -265,7 +316,7 @@ class _LoginHeader extends StatelessWidget {
                           'Inicia sesión para continuar',
                           textAlign: TextAlign.center,
                           style: AppTypography.bodySecondary.copyWith(
-                            fontSize: layout.headerHeight < 220 ? 12 : 14,
+                            fontSize: layout.isCompact ? 12 : 14,
                           ),
                         ),
                       ],
@@ -273,7 +324,7 @@ class _LoginHeader extends StatelessWidget {
                   ),
                 ),
                 Positioned(
-                  top: layout.headerHeight < 220 ? 6 : 12,
+                  top: layout.isCompact ? 6 : 12,
                   right: layout.headerSide(25),
                   child: Hero(
                     tag: 'app-logo',
@@ -287,64 +338,74 @@ class _LoginHeader extends StatelessWidget {
               ],
             ),
           ),
-          Expanded(
-            child: Stack(
-              clipBehavior: Clip.hardEdge,
-              children: [
-                const Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [AppColors.surface, AppColors.background],
-                      ),
-                    ),
-                  ),
+          _HeroPetsArea(layout: layout),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroPetsArea extends StatelessWidget {
+  const _HeroPetsArea({required this.layout});
+
+  final _LoginLayout layout;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      key: const Key('loginHeroPetsArea'),
+      height: layout.heroPetsHeight,
+      child: Stack(
+        clipBehavior: Clip.hardEdge,
+        children: [
+          const Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [AppColors.surface, AppColors.background],
                 ),
-                const Positioned.fill(
-                  child: ClipPath(
-                    clipper: _LoginHeaderWaveClipper(),
-                    child: ColoredBox(color: AppColors.primarySoft),
-                  ),
+              ),
+            ),
+          ),
+          const Positioned.fill(
+            child: ClipPath(
+              clipper: _LoginHeaderWaveClipper(),
+              child: ColoredBox(color: AppColors.primarySoft),
+            ),
+          ),
+          Positioned(
+            left: layout.headerSide(13),
+            bottom: layout.headerBottom(10),
+            child: Image.asset(
+              _largePawAsset,
+              width: layout.headerSize(61),
+              height: layout.headerSize(56),
+            ),
+          ),
+          Positioned(
+            left: layout.headerSide(112),
+            bottom: layout.headerBottom(38),
+            child: Image.asset(
+              _smallPawAsset,
+              width: layout.headerSize(40),
+              height: layout.headerSize(37),
+            ),
+          ),
+          Positioned.fill(
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: SizedBox(
+                height: layout.heroPetsHeight,
+                child: Image.asset(
+                  _loginPetsAsset,
+                  key: const Key('loginPetsImage'),
+                  alignment: Alignment.bottomCenter,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
                 ),
-                Positioned(
-                  left: layout.headerSide(13),
-                  bottom: layout.headerBottom(10),
-                  child: Image.asset(
-                    _largePawAsset,
-                    width: layout.headerSize(61),
-                    height: layout.headerSize(56),
-                  ),
-                ),
-                Positioned(
-                  left: layout.headerSide(112),
-                  bottom: layout.headerBottom(38),
-                  child: Image.asset(
-                    _smallPawAsset,
-                    width: layout.headerSize(40),
-                    height: layout.headerSize(37),
-                  ),
-                ),
-                Positioned.fill(
-                  child: Align(
-                    alignment: const Alignment(.52, 1),
-                    child: FractionallySizedBox(
-                      widthFactor: .57,
-                      heightFactor: 1,
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 215),
-                        child: Image.asset(
-                          _loginPetsAsset,
-                          alignment: Alignment.bottomCenter,
-                          fit: BoxFit.contain,
-                          filterQuality: FilterQuality.high,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ],
@@ -392,6 +453,8 @@ class _LoginForm extends StatelessWidget {
     required this.passwordController,
     required this.isSubmitting,
     required this.onSubmit,
+    required this.loadingProvider,
+    required this.onSocialLogin,
   });
 
   final _LoginLayout layout;
@@ -399,6 +462,8 @@ class _LoginForm extends StatelessWidget {
   final TextEditingController passwordController;
   final bool isSubmitting;
   final VoidCallback onSubmit;
+  final ExternalAuthProvider? loadingProvider;
+  final ValueChanged<ExternalAuthProvider> onSocialLogin;
 
   @override
   Widget build(BuildContext context) {
@@ -441,6 +506,7 @@ class _LoginForm extends StatelessWidget {
           ),
           SizedBox(height: layout.beforeButtonGap),
           _LoginButton(
+            key: const Key('loginSubmitButton'),
             label: 'Iniciar sesión',
             height: layout.loginButtonHeight,
             isLoading: isSubmitting,
@@ -463,7 +529,11 @@ class _LoginForm extends StatelessWidget {
             ],
           ),
           SizedBox(height: layout.afterDividerGap),
-          _SocialLoginRow(buttonSize: layout.socialButtonSize),
+          _SocialLoginRow(
+            buttonSize: layout.socialButtonSize,
+            loadingProvider: loadingProvider,
+            onLogin: onSocialLogin,
+          ),
           SizedBox(height: layout.beforeSecurityGap),
           _SecurityNotice(height: layout.securityHeight),
         ],
@@ -474,6 +544,7 @@ class _LoginForm extends StatelessWidget {
 
 class _LoginButton extends StatelessWidget {
   const _LoginButton({
+    super.key,
     required this.label,
     required this.height,
     required this.isLoading,
@@ -608,22 +679,28 @@ class _CreateAccountCard extends StatelessWidget {
 }
 
 class _SocialLoginRow extends StatelessWidget {
-  const _SocialLoginRow({required this.buttonSize});
+  const _SocialLoginRow({
+    required this.buttonSize,
+    required this.loadingProvider,
+    required this.onLogin,
+  });
 
   final double buttonSize;
+  final ExternalAuthProvider? loadingProvider;
+  final ValueChanged<ExternalAuthProvider> onLogin;
 
   @override
   Widget build(BuildContext context) {
-    void showComingSoon() {
-      AppSnackBar.showInfo(context, 'Próximamente disponible.');
-    }
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _SocialButton(
+          key: const Key('googleLoginButton'),
           size: buttonSize,
-          onTap: showComingSoon,
+          onTap: loadingProvider == null
+              ? () => onLogin(ExternalAuthProvider.google)
+              : null,
+          isLoading: loadingProvider == ExternalAuthProvider.google,
           child: const SizedBox(
             width: 29,
             height: 29,
@@ -632,14 +709,22 @@ class _SocialLoginRow extends StatelessWidget {
         ),
         const SizedBox(width: 38),
         _SocialButton(
+          key: const Key('appleLoginButton'),
           size: buttonSize,
-          onTap: showComingSoon,
+          onTap: loadingProvider == null
+              ? () => onLogin(ExternalAuthProvider.apple)
+              : null,
+          isLoading: loadingProvider == ExternalAuthProvider.apple,
           child: const Icon(Icons.apple_rounded, size: 27),
         ),
         const SizedBox(width: 38),
         _SocialButton(
+          key: const Key('facebookLoginButton'),
           size: buttonSize,
-          onTap: showComingSoon,
+          onTap: loadingProvider == null
+              ? () => onLogin(ExternalAuthProvider.facebook)
+              : null,
+          isLoading: loadingProvider == ExternalAuthProvider.facebook,
           child: const Icon(
             Icons.facebook_rounded,
             size: 29,
@@ -653,14 +738,17 @@ class _SocialLoginRow extends StatelessWidget {
 
 class _SocialButton extends StatelessWidget {
   const _SocialButton({
+    super.key,
     required this.onTap,
     required this.child,
     required this.size,
+    required this.isLoading,
   });
 
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final Widget child;
   final double size;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -673,7 +761,15 @@ class _SocialButton extends StatelessWidget {
         child: SizedBox(
           width: size,
           height: size,
-          child: Center(child: child),
+          child: Center(
+            child: isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : child,
+          ),
         ),
       ),
     );

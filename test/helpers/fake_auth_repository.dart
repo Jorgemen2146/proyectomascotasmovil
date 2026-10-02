@@ -4,6 +4,7 @@ import 'package:dogplatform/core/errors/app_failure.dart';
 import 'package:dogplatform/core/result/result.dart';
 import 'package:dogplatform/core/services/photo_picker_service.dart';
 import 'package:dogplatform/features/authentication/domain/entities/user.dart';
+import 'package:dogplatform/features/authentication/domain/entities/external_auth.dart';
 import 'package:dogplatform/features/authentication/domain/repositories/auth_repository.dart';
 import 'package:dogplatform/features/legal/domain/entities/legal.dart';
 
@@ -24,6 +25,12 @@ class FakeAuthRepository implements AuthRepository {
   Result<void> updateProfileResult = const Result.success(null);
   Result<void> uploadProfilePhotoResult = const Result.success(null);
   bool activeSession = false;
+  Result<ExternalAuthResult> externalLoginResult = const Result.failure(
+    UnknownFailure(),
+  );
+  Result<User> completeExternalRegistrationResult = const Result.failure(
+    UnknownFailure(),
+  );
 
   int loginCalls = 0;
   int registerCalls = 0;
@@ -52,6 +59,28 @@ class FakeAuthRepository implements AuthRepository {
     loginCalls++;
     lastEmail = email;
     return loginResult;
+  }
+
+  @override
+  Future<Result<ExternalAuthResult>> externalLogin({
+    required ExternalProviderCredential credential,
+  }) async {
+    return externalLoginResult;
+  }
+
+  @override
+  Future<Result<User>> completeExternalRegistration({
+    required String registrationToken,
+    required String email,
+    required String firstName,
+    required String lastName,
+    required List<LegalConsentSelection> legalConsents,
+  }) async {
+    lastEmail = email;
+    lastFirstName = firstName;
+    lastLastName = lastName;
+    lastLegalConsents = legalConsents;
+    return completeExternalRegistrationResult;
   }
 
   @override

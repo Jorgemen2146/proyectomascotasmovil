@@ -6,6 +6,7 @@ import 'package:dogplatform/features/authentication/data/repositories/auth_repos
 import 'package:dogplatform/core/storage/secure_token_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dogplatform/features/legal/domain/entities/legal.dart';
+import 'package:dogplatform/features/authentication/domain/entities/external_auth.dart';
 
 void main() {
   test('Register y Verify Email no guardan tokens', () async {
@@ -50,6 +51,76 @@ void main() {
     expect(login.isSuccess, isTrue);
     expect(storage.saveCalls, 1);
   });
+
+  test('Login externo exitoso guarda sólo la sesión DogPlatform', () async {
+    final storage = _RecordingTokenStorage();
+    final repository = AuthRepositoryImpl(
+      remoteDataSource: _FakeRemoteDataSource(),
+      tokenStorage: storage,
+    );
+
+    final result = await repository.externalLogin(
+      credential: const ExternalProviderCredential(
+        provider: ExternalAuthProvider.google,
+        credential: 'provider-token',
+      ),
+    );
+
+    expect(result.valueOrNull, isA<ExternalAuthAuthenticated>());
+    expect(storage.saveCalls, 1);
+    expect(storage.accessToken, 'access');
+    expect(storage.savedRefreshToken, 'refresh');
+  });
+
+  test('422 con registrationToken solicita sólo los datos faltantes', () async {
+    final storage = _RecordingTokenStorage();
+    final remote = _FakeRemoteDataSource()
+      ..externalError = _externalError(422, {
+        'registrationToken': 'registration-ticket',
+        'missingFields': ['email'],
+      });
+    final repository = AuthRepositoryImpl(
+      remoteDataSource: remote,
+      tokenStorage: storage,
+    );
+
+    final result = await repository.externalLogin(
+      credential: const ExternalProviderCredential(
+        provider: ExternalAuthProvider.facebook,
+        credential: 'provider-token',
+      ),
+    );
+
+    final registration = result.valueOrNull as ExternalRegistrationRequired;
+    expect(registration.registrationToken, 'registration-ticket');
+    expect(registration.missingFields, {'email'});
+    expect(storage.saveCalls, 0);
+  });
+
+  test(
+    'Account link required se traduce sin vincular silenciosamente',
+    () async {
+      final remote = _FakeRemoteDataSource()
+        ..externalError = _externalError(409, {
+          'code': 'EXTERNAL_ACCOUNT_LINK_REQUIRED',
+        });
+      final repository = AuthRepositoryImpl(
+        remoteDataSource: remote,
+        tokenStorage: _RecordingTokenStorage(),
+      );
+
+      final result = await repository.externalLogin(
+        credential: const ExternalProviderCredential(
+          provider: ExternalAuthProvider.apple,
+          credential: 'provider-token',
+          nonce: 'nonce',
+        ),
+      );
+
+      expect(result.failureOrNull?.message, contains('Ya existe una cuenta'));
+      expect(result.failureOrNull?.message, contains('PetLife'));
+    },
+  );
 
   test('Logout envía el refreshToken y siempre limpia la sesión', () async {
     final storage = _RecordingTokenStorage()..refreshToken = 'refresh';
@@ -118,6 +189,7 @@ class _FakeRemoteDataSource extends AuthRemoteDataSource {
 
   String? logoutRefreshToken;
   DioException? recoveryError;
+  DioException? externalError;
 
   @override
   Future<void> register({
@@ -153,6 +225,14 @@ class _FakeRemoteDataSource extends AuthRemoteDataSource {
   }
 
   @override
+  Future<AuthResponseDto> externalLogin({
+    required ExternalProviderCredential credential,
+  }) async {
+    if (externalError case final error?) throw error;
+    return login(email: 'dog@example.com', password: 'unused');
+  }
+
+  @override
   Future<void> logout({required String refreshToken}) async {
     logoutRefreshToken = refreshToken;
   }
@@ -181,6 +261,8 @@ class _RecordingTokenStorage extends SecureTokenStorage {
   int saveCalls = 0;
   int clearCalls = 0;
   String? refreshToken;
+  String? accessToken;
+  String? savedRefreshToken;
 
   @override
   Future<void> saveTokens({
@@ -188,6 +270,8 @@ class _RecordingTokenStorage extends SecureTokenStorage {
     required String refreshToken,
   }) async {
     saveCalls++;
+    this.accessToken = accessToken;
+    savedRefreshToken = refreshToken;
   }
 
   @override
@@ -197,4 +281,17 @@ class _RecordingTokenStorage extends SecureTokenStorage {
   Future<void> clear() async {
     clearCalls++;
   }
+}
+
+DioException _externalError(int statusCode, Map<String, dynamic> data) {
+  final request = RequestOptions(path: '/external');
+  return DioException(
+    requestOptions: request,
+    response: Response<dynamic>(
+      requestOptions: request,
+      statusCode: statusCode,
+      data: data,
+    ),
+    type: DioExceptionType.badResponse,
+  );
 }

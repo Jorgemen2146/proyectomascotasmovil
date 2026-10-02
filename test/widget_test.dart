@@ -14,6 +14,6 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: DogPlatformApp()));
     await tester.pump();
 
-    expect(find.text('DogPlatform', findRichText: true), findsOneWidget);
+    expect(find.text('PetLife', findRichText: true), findsOneWidget);
   });
 }

@@ -6,6 +6,8 @@ import '../../../core/errors/app_failure.dart';
 import '../domain/entities/user.dart';
 import '../../legal/domain/entities/legal.dart';
 import '../../legal/application/legal_data_providers.dart';
+import '../domain/entities/external_auth.dart';
+import '../domain/services/external_identity_service.dart';
 import 'auth_state.dart';
 import 'providers.dart';
 
@@ -125,8 +127,74 @@ class AuthStateController extends Notifier<AuthState> {
 
   Future<void> logout() async {
     await ref.read(logoutUseCaseProvider).call();
+    await ref.read(externalIdentityServiceProvider).signOut();
     clearUserLegalState(ref);
     state = const AuthState(status: AuthStatus.unauthenticated);
+  }
+
+  Future<ExternalAuthResult?> externalLogin({
+    required ExternalAuthProvider provider,
+  }) async {
+    state = state.copyWith(errorMessage: null);
+    try {
+      final providerResult = await ref
+          .read(externalIdentityServiceProvider)
+          .signIn(provider);
+      if (providerResult is ExternalProviderCancelled) return null;
+      final credential = (providerResult as ExternalProviderSuccess).credential;
+      final result = await ref
+          .read(authRepositoryProvider)
+          .externalLogin(credential: credential);
+      return result.when(
+        success: (outcome) {
+          if (outcome is ExternalAuthAuthenticated) {
+            clearUserLegalState(ref);
+            state = AuthState(
+              status: AuthStatus.authenticated,
+              user: outcome.user,
+            );
+          }
+          return outcome;
+        },
+        failure: (failure) {
+          state = state.copyWith(errorMessage: failure.message);
+          return null;
+        },
+      );
+    } on ExternalIdentityException catch (error) {
+      state = state.copyWith(errorMessage: error.message);
+      return null;
+    }
+  }
+
+  Future<bool> completeExternalRegistration({
+    required ExternalRegistrationRequired registration,
+    required String email,
+    required String firstName,
+    required String lastName,
+    required List<LegalConsentSelection> legalConsents,
+  }) async {
+    state = state.copyWith(errorMessage: null);
+    final result = await ref
+        .read(authRepositoryProvider)
+        .completeExternalRegistration(
+          registrationToken: registration.registrationToken,
+          email: email,
+          firstName: firstName,
+          lastName: lastName,
+          legalConsents: legalConsents,
+        );
+    return result.when(
+      success: (user) {
+        clearUserLegalState(ref);
+        state = AuthState(status: AuthStatus.authenticated, user: user);
+        return true;
+      },
+      failure: (failure) {
+        state = state.copyWith(errorMessage: failure.message);
+        return false;
+      },
+    );
   }
 
   void replaceUser(User user) {

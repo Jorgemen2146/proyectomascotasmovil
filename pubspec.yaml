@@ -49,10 +49,17 @@ dependencies:
   json_annotation: ^4.9.0
 
   # Secure storage (tokens only, never passwords)
-  flutter_secure_storage: ^9.2.4
+  flutter_secure_storage: ^10.3.1
 
   # Camera/gallery access for pet photos.
   image_picker: ^1.1.2
+
+  # Native identity providers. Their short-lived credentials are exchanged
+  # immediately for a DogPlatform session and are never persisted locally.
+  google_sign_in: ^7.2.0
+  flutter_facebook_auth: ^7.2.0
+  sign_in_with_apple: ^8.2.0
+  crypto: ^3.0.6
 
   # Design system
   google_fonts: ^6.2.1

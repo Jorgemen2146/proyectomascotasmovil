@@ -23,6 +23,7 @@ void main() {
 
     expect(find.text('Luna'), findsWidgets);
     expect(find.text('Golden Retriever'), findsWidgets);
+    expect(find.text('En PetLife desde'), findsOneWidget);
     expect(find.text('Max'), findsNothing);
     expect(find.byIcon(Icons.logout_rounded), findsNothing);
   });

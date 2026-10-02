@@ -60,7 +60,7 @@ class _DogPlatformAppState extends ConsumerState<DogPlatformApp>
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
-      title: 'DogPlatform',
+      title: 'PetLife',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       routerConfig: router,

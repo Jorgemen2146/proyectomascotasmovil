@@ -1,0 +1,6 @@
+interface:
+  display_name: "PetLife UI from Reference"
+  short_description: "Reproduce referencias visuales en Flutter"
+  default_prompt: "Usa $petlife-ui-from-reference para implementar esta referencia visual en PetLife con alta fidelidad."
+policy:
+  allow_implicit_invocation: true
