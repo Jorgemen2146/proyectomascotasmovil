@@ -40,4 +40,10 @@ class AppIcons {
   static const IconData settings = Icons.settings_outlined;
   static const IconData privacy = Icons.shield_outlined;
   static const IconData legal = Icons.description_outlined;
+  static const IconData messages = Icons.chat_bubble_outline_rounded;
+  static const IconData friends = Icons.people_outline_rounded;
+  static const IconData personAdd = Icons.person_add_alt_1_outlined;
+  static const IconData blocked = Icons.block_outlined;
+  static const IconData send = Icons.send_rounded;
+  static const IconData more = Icons.more_vert_rounded;
 }

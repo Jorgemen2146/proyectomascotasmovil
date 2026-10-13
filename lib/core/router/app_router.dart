@@ -33,6 +33,7 @@ import '../../features/pets/presentation/pages/pet_photos_page.dart';
 import '../../features/pets/presentation/pages/pets_page.dart';
 import '../../features/profile/presentation/pages/edit_profile_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
+import '../../features/social/presentation/pages/social_pages.dart';
 import 'app_routes.dart';
 import 'go_router_refresh_notifier.dart';
 
@@ -99,6 +100,34 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.notifications,
         builder: (context, state) => const NotificationsPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.socialSearch,
+        builder: (context, state) => const SocialSearchPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.friends,
+        builder: (context, state) => const FriendsPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.friendRequests,
+        builder: (context, state) => const FriendRequestsPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.blockedUsers,
+        builder: (context, state) => const BlockedUsersPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.messages,
+        builder: (context, state) => const InboxPage(),
+        routes: [
+          GoRoute(
+            path: ':conversationId',
+            builder: (context, state) => ChatPage(
+              conversationId: state.pathParameters['conversationId']!,
+            ),
+          ),
+        ],
       ),
       GoRoute(
         path: AppRoutes.legalTerms,

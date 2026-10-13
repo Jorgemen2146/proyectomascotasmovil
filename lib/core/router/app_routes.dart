@@ -27,6 +27,13 @@ class AppRoutes {
   static String petPhotos(String petId) => '/pets/$petId/photos';
   static const String profile = '/profile';
   static const String editProfile = '/profile/edit';
+  static const String socialSearch = '/social/search';
+  static const String friends = '/social/friends';
+  static const String friendRequests = '/social/requests';
+  static const String blockedUsers = '/social/blocked';
+  static const String messages = '/messages';
+  static String conversation(String conversationId) =>
+      '/messages/$conversationId';
 
   static const String genealogy = '/genealogy';
   static String genealogyForPet(String petId) =>

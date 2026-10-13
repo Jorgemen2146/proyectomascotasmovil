@@ -15,6 +15,7 @@ import '../../../../core/widgets/error_state.dart';
 import '../../../../core/widgets/main_bottom_navigation.dart';
 import '../../../authentication/application/auth_state_controller.dart';
 import '../../../notifications/presentation/widgets/notification_bell.dart';
+import '../../../social/presentation/widgets/message_button.dart';
 import '../../../pets/application/providers.dart';
 import '../../../pets/domain/entities/pet.dart';
 import '../../../pets/presentation/widgets/pet_design_widgets.dart';
@@ -97,6 +98,7 @@ class _HomeHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(width: AppSpacing.sm),
+        const MessageButton(),
         const NotificationBell(),
       ],
     );

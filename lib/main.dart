@@ -8,6 +8,7 @@ import 'core/theme/app_theme.dart';
 import 'features/authentication/application/auth_state.dart';
 import 'features/authentication/application/auth_state_controller.dart';
 import 'features/notifications/application/providers.dart';
+import 'features/social/application/providers.dart';
 
 /// Entry point. The active environment is selected via
 /// `--dart-define=ENV=dev|qa|prod` (defaults to dev when not provided).
@@ -57,6 +58,7 @@ class _DogPlatformAppState extends ConsumerState<DogPlatformApp>
   @override
   Widget build(BuildContext context) {
     ref.watch(notificationsSessionCoordinatorProvider);
+    ref.watch(socialSessionCoordinatorProvider);
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(

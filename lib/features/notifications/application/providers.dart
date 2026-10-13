@@ -5,14 +5,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/network_providers.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/result/result.dart';
+import '../../../core/realtime/realtime_client.dart';
 import '../../authentication/application/auth_state.dart';
 import '../../authentication/application/auth_state_controller.dart';
 import '../data/datasources/notifications_remote_data_source.dart';
 import '../data/repositories/notifications_repository_impl.dart';
 import '../data/realtime/web_socket_notification_realtime_transport.dart';
 import '../domain/entities/notification.dart';
-import '../domain/repositories/notifications_repository.dart';
 import '../domain/repositories/notification_realtime_transport.dart';
+import '../domain/repositories/notifications_repository.dart';
 import 'notifications_state.dart';
 
 final notificationsRemoteDataSourceProvider =
@@ -33,9 +34,24 @@ final notificationRealtimeTransportProvider =
       final transport = WebSocketNotificationRealtimeTransport(
         apiBaseUrl: AppConfig.instance.apiBaseUrl,
       );
-      ref.onDispose(() => unawaited(transport.disconnect()));
+      ref.onDispose(() => unawaited(transport.dispose()));
       return transport;
     });
+
+/// The single application-wide realtime connection shared by all features.
+final realtimeClientProvider = Provider<RealtimeClient>((ref) {
+  final transport = ref.watch(notificationRealtimeTransportProvider);
+  if (transport is RealtimeClient) return transport as RealtimeClient;
+  return const _EmptyRealtimeClient();
+});
+
+class _EmptyRealtimeClient implements RealtimeClient {
+  const _EmptyRealtimeClient();
+  @override
+  Stream<void> get connections => const Stream.empty();
+  @override
+  Stream<RealtimeEvent> get events => const Stream.empty();
+}
 
 final notificationAccessTokenProvider = Provider<Future<String?> Function()>((
   ref,

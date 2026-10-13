@@ -84,6 +84,27 @@ class _ProfileContent extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.compact),
                   _ProfileSectionCard(
+                    title: 'SOCIAL',
+                    options: [
+                      _ProfileOptionData(
+                        icon: AppIcons.friends,
+                        label: 'Amigos',
+                        onTap: () => context.push(AppRoutes.friends),
+                      ),
+                      _ProfileOptionData(
+                        icon: AppIcons.personAdd,
+                        label: 'Solicitudes',
+                        onTap: () => context.push(AppRoutes.friendRequests),
+                      ),
+                      _ProfileOptionData(
+                        icon: AppIcons.blocked,
+                        label: 'Usuarios bloqueados',
+                        onTap: () => context.push(AppRoutes.blockedUsers),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.compact),
+                  _ProfileSectionCard(
                     title: 'PREFERENCIAS',
                     options: [
                       _ProfileOptionData(

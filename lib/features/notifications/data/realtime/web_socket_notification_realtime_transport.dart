@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import '../../../../core/realtime/realtime_client.dart';
 import '../../domain/repositories/notification_realtime_transport.dart';
 import '../dto/notification_dtos.dart';
 
@@ -13,7 +14,7 @@ typedef NotificationWebSocketConnector =
     Future<NotificationWebSocketConnection> Function(Uri uri);
 
 class WebSocketNotificationRealtimeTransport
-    implements NotificationRealtimeTransport {
+    implements NotificationRealtimeTransport, RealtimeClient {
   WebSocketNotificationRealtimeTransport({
     required String apiBaseUrl,
     NotificationWebSocketConnector? connector,
@@ -44,6 +45,16 @@ class WebSocketNotificationRealtimeTransport
   bool _isConnecting = false;
   int _reconnectAttempt = 0;
   int _generation = 0;
+  final StreamController<RealtimeEvent> _events =
+      StreamController<RealtimeEvent>.broadcast();
+  final StreamController<void> _connections =
+      StreamController<void>.broadcast();
+
+  @override
+  Stream<RealtimeEvent> get events => _events.stream;
+
+  @override
+  Stream<void> get connections => _connections.stream;
 
   @override
   bool get isConnected => _connection != null;
@@ -107,6 +118,7 @@ class WebSocketNotificationRealtimeTransport
       } catch (_) {
         // A REST resync failure must not tear down a healthy socket.
       }
+      if (!_connections.isClosed) _connections.add(null);
     } catch (_) {
       _scheduleReconnect(generation);
     } finally {
@@ -116,6 +128,8 @@ class WebSocketNotificationRealtimeTransport
 
   void _handleMessage(dynamic rawMessage) {
     if (rawMessage is! String) return;
+    final event = RealtimeEvent.tryParse(rawMessage);
+    if (event != null && !_events.isClosed) _events.add(event);
     final notification = NotificationRealtimeEnvelopeDto.tryParse(rawMessage);
     if (notification == null) return;
     try {
@@ -173,6 +187,12 @@ class WebSocketNotificationRealtimeTransport
       _IoNotificationWebSocketConnection(
         await WebSocket.connect(uri.toString()),
       );
+
+  Future<void> dispose() async {
+    await disconnect();
+    await _events.close();
+    await _connections.close();
+  }
 }
 
 class _IoNotificationWebSocketConnection

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:dogplatform/core/realtime/realtime_client.dart';
 import 'package:dogplatform/features/notifications/data/realtime/web_socket_notification_realtime_transport.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -117,6 +118,29 @@ void main() {
     await Future.wait([first, second]);
 
     expect(connectorCalls, 1);
+  });
+
+  test('comparte eventos Social y notifica una sola conexion', () async {
+    final socket = FakeWebSocketConnection();
+    final transport = _transport((_) async => socket);
+    final events = <RealtimeEvent>[];
+    var connections = 0;
+    final eventSubscription = transport.events.listen(events.add);
+    final connectionSubscription = transport.connections.listen(
+      (_) => connections++,
+    );
+    addTearDown(eventSubscription.cancel);
+    addTearDown(connectionSubscription.cancel);
+    addTearDown(transport.disconnect);
+
+    await _connect(transport);
+    await _connect(transport);
+    socket.add('{"event":"chat.message.received","data":{"id":"message-1"}}');
+    await _flushEvents();
+
+    expect(connections, 1);
+    expect(events.single.name, 'chat.message.received');
+    expect(events.single.data['id'], 'message-1');
   });
 
   test('disconnect cancela reconexion pendiente', () async {
